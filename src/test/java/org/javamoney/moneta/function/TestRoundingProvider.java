@@ -72,15 +72,15 @@ public class TestRoundingProvider implements RoundingProviderSpi {
 
         @Override
         public MonetaryAmount apply(MonetaryAmount amount) {
-            MonetaryOperator minorRounding = MonetaryRoundings
+            MonetaryOperator minorRounding = Monetary
                     .getRounding(RoundingQueryBuilder.of().set("scale", 2).set(RoundingMode.HALF_UP).build());
             MonetaryAmount amt = amount.with(minorRounding);
-            MonetaryAmount mp = amt.with(MonetaryUtil.minorPart());
+            MonetaryAmount mp = amt.with(MonetaryOperators.minorPart());
             if (mp.isGreaterThanOrEqualTo(
-                    MonetaryAmounts.getDefaultAmountFactory().setCurrency(amount.getCurrency()).setNumber(0.03)
+                    Monetary.getDefaultAmountFactory().setCurrency(amount.getCurrency()).setNumber(0.03)
                             .create())) {
                 // add
-                return amt.add(MonetaryAmounts.getDefaultAmountFactory().setCurrency(amt.getCurrency())
+                return amt.add(Monetary.getDefaultAmountFactory().setCurrency(amt.getCurrency())
                         .setNumber(new BigDecimal("0.05")).create().subtract(mp));
             } else {
                 // subtract
@@ -106,14 +106,14 @@ public class TestRoundingProvider implements RoundingProviderSpi {
         if ("default".equals(roundingId)) {
             CurrencyUnit currency = roundingQuery.getCurrency();
             if (Objects.nonNull(currency)) {
-                if (currency.getCurrencyCode().equals("XXX")) {
+                if ("XXX".equals(currency.getCurrencyCode())) {
                     if (timestamp != null && timestamp.isAfter(LocalDate.now())) {
                         return minusOneRounding;
                     } else {
                         return zeroRounding;
                     }
                 } else if (Optional.ofNullable(roundingQuery.getBoolean("cashRounding")).orElse(Boolean.FALSE)) {
-                    if (currency.getCurrencyCode().equals("CHF")) {
+                    if ("CHF".equals(currency.getCurrencyCode())) {
                         return chfCashRounding;
                     }
                 }

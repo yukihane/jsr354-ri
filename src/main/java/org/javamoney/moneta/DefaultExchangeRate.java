@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2012, 2014, Credit Suisse (Anatole Tresch), Werner Keil and others by the @author tag.
+/*
+ * Copyright (c) 2012, 2015, Credit Suisse, Anatole Tresch, Werner Keil and others by the @author tag.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -85,8 +85,10 @@ import javax.money.convert.ExchangeRate;
  * @see <a
  * href="https://en.wikipedia.org/wiki/Exchange_rate#Quotations">Wikipedia:
  * Exchange Rate (Quotations)</a>
+ * @deprecated Use org.javamoney.moneta.convert.DefaultExchangeRate instead
  */
 class DefaultExchangeRate implements ExchangeRate, Serializable, Comparable<ExchangeRate> {
+// TODO this should probably go to "convert" in future releases. Analyze feasability of refactoring.
 
     /**
      * serialVersionUID.
@@ -111,7 +113,7 @@ class DefaultExchangeRate implements ExchangeRate, Serializable, Comparable<Exch
     /**
      * The full chain, at least one instance long.
      */
-    private List<ExchangeRate> chain = new ArrayList<>();
+    private final List<ExchangeRate> chain = new ArrayList<>();
 
 
     /**
@@ -158,7 +160,8 @@ class DefaultExchangeRate implements ExchangeRate, Serializable, Comparable<Exch
      *
      * @return the conversion context, never null.
      */
-    public final ConversionContext getContext() {
+    @Override
+	public final ConversionContext getContext() {
         return this.conversionContext;
     }
 
@@ -167,7 +170,8 @@ class DefaultExchangeRate implements ExchangeRate, Serializable, Comparable<Exch
      *
      * @return the base {@link javax.money.CurrencyUnit}.
      */
-    public final CurrencyUnit getBaseCurrency() {
+    @Override
+	public final CurrencyUnit getBaseCurrency() {
         return this.base;
     }
 
@@ -176,7 +180,8 @@ class DefaultExchangeRate implements ExchangeRate, Serializable, Comparable<Exch
      *
      * @return the term {@link javax.money.CurrencyUnit}.
      */
-    public final CurrencyUnit getCurrency() {
+    @Override
+	public final CurrencyUnit getCurrency() {
         return this.term;
     }
 
@@ -185,7 +190,8 @@ class DefaultExchangeRate implements ExchangeRate, Serializable, Comparable<Exch
      *
      * @return the bid factor for this exchange rate, or {@code null}.
      */
-    public final NumberValue getFactor() {
+    @Override
+	public final NumberValue getFactor() {
         return this.factor;
     }
 
@@ -196,7 +202,8 @@ class DefaultExchangeRate implements ExchangeRate, Serializable, Comparable<Exch
      * several instances. For a direct exchange rate, this equals to
      * <code>new ExchangeRate[]{this}</code>.
      */
-    public final List<ExchangeRate> getExchangeRateChain() {
+    @Override
+	public final List<ExchangeRate> getExchangeRateChain() {
         return this.chain;
     }
 
@@ -212,7 +219,8 @@ class DefaultExchangeRate implements ExchangeRate, Serializable, Comparable<Exch
      *
      * @return true, if the exchange rate is derived.
      */
-    public final boolean isDerived() {
+    @Override
+	public final boolean isDerived() {
         return this.chain.size() > 1;
     }
 
@@ -241,7 +249,7 @@ class DefaultExchangeRate implements ExchangeRate, Serializable, Comparable<Exch
      */
     @Override
     public String toString() {
-        return "ExchangeRate [base=" + base + ", factor=" + factor + ", conversionContext=" + conversionContext + ']';
+        return "ExchangeRate [base=" + base + ", term=" + term + ", factor=" + factor + ", conversionContext=" + conversionContext + ']';
     }
 
     /*
@@ -266,7 +274,7 @@ class DefaultExchangeRate implements ExchangeRate, Serializable, Comparable<Exch
         }
         if (obj instanceof DefaultExchangeRate) {
             DefaultExchangeRate other = (DefaultExchangeRate) obj;
-            return Objects.equals(base, other.base) && Objects.equals(chain, other.chain) &&
+            return Objects.equals(base, other.base) &&
                     Objects.equals(conversionContext, other.conversionContext) &&
                     Objects.equals(factor, other.factor) && Objects.equals(term, other.term);
         }

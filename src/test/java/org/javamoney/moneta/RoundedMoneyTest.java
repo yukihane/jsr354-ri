@@ -33,6 +33,7 @@ import java.math.RoundingMode;
 
 import javax.money.*;
 
+import org.junit.Assert;
 import org.testng.annotations.Test;
 
 /**
@@ -41,8 +42,8 @@ import org.testng.annotations.Test;
 public class RoundedMoneyTest {
 
     private static final BigDecimal TEN = new BigDecimal(10.0d);
-    protected static final CurrencyUnit EURO = MonetaryCurrencies.getCurrency("EUR");
-    protected static final CurrencyUnit DOLLAR = MonetaryCurrencies.getCurrency("USD");
+    protected static final CurrencyUnit EURO = Monetary.getCurrency("EUR");
+    protected static final CurrencyUnit DOLLAR = Monetary.getCurrency("USD");
 
     /**
      * Test method for
@@ -51,13 +52,13 @@ public class RoundedMoneyTest {
      */
     @Test
     public void testOfCurrencyUnitBigDecimal() {
-        RoundedMoney m = RoundedMoney.of(TEN, MonetaryCurrencies.getCurrency("EUR"));
+        RoundedMoney m = RoundedMoney.of(TEN, Monetary.getCurrency("EUR"));
         assertEquals(TEN, m.getNumber().numberValue(BigDecimal.class));
     }
 
     @Test
     public void testOfCurrencyUnitDouble() {
-        RoundedMoney m = RoundedMoney.of(10.0d, MonetaryCurrencies.getCurrency("EUR"));
+        RoundedMoney m = RoundedMoney.of(10.0d, Monetary.getCurrency("EUR"));
         assertTrue(TEN.doubleValue() == m.getNumber().doubleValue());
     }
 
@@ -739,12 +740,12 @@ public class RoundedMoneyTest {
                 RoundedMoney.of(new BigDecimal("-23123213.435"), "USS"), RoundedMoney.of(-23123213, "USN"),
                 RoundedMoney.of(0, "GBP")};
         RoundedMoney s = RoundedMoney.of(10, "XXX");
-        RoundedMoney[] moneys2 = new RoundedMoney[]{s.with(MonetaryCurrencies.getCurrency("CHF"), 100),
-                s.with(MonetaryCurrencies.getCurrency("USD"), 34242344),
-                s.with(MonetaryCurrencies.getCurrency("EUR"), new BigDecimal("23123213.435")),
-                s.with(MonetaryCurrencies.getCurrency("USS"), new BigDecimal("-23123213.435")),
-                s.with(MonetaryCurrencies.getCurrency("USN"), -23123213),
-                s.with(MonetaryCurrencies.getCurrency("GBP"), 0)};
+        RoundedMoney[] moneys2 = new RoundedMoney[]{s.with(Monetary.getCurrency("CHF"), 100),
+                s.with(Monetary.getCurrency("USD"), 34242344),
+                s.with(Monetary.getCurrency("EUR"), new BigDecimal("23123213.435")),
+                s.with(Monetary.getCurrency("USS"), new BigDecimal("-23123213.435")),
+                s.with(Monetary.getCurrency("USN"), -23123213),
+                s.with(Monetary.getCurrency("GBP"), 0)};
         for (int i = 0; i < moneys.length; i++) {
             assertEquals(moneys[i], moneys2[i], "with(Number) failed.");
         }
@@ -971,7 +972,7 @@ public class RoundedMoneyTest {
     // */
     // @Test
     // public void testGetAmountWhole() {
-    // assertEquals(1, RoundedMoney.of("XXX", 1.23455645d).getAmountWhole());
+    // assertEquals(1, RoundedMoney.of(1.23455645d).getAmountWhole(), "XXX");
     // assertEquals(1, RoundedMoney.of( 1).getAmountWhole());
     // assertEquals(11, RoundedMoney.of( 11.0d).getAmountWhole());
     // assertEquals(1234, RoundedMoney.of( 1234.1d).getAmountWhole());
@@ -984,7 +985,7 @@ public class RoundedMoneyTest {
     // */
     // @Test
     // public void testGetAmountFractionNumerator() {
-    // assertEquals(0, RoundedMoney.of("XXX", new BigDecimal("1.23455645"))
+    // assertEquals(0, RoundedMoney.of(new BigDecimal("1.23455645"), "XXX")
     // .getAmountFractionNumerator());
     // assertEquals(0, RoundedMoney.of( 1).getAmountFractionNumerator());
     // assertEquals(0, RoundedMoney.of( new BigDecimal("11.0"))
@@ -1002,7 +1003,7 @@ public class RoundedMoneyTest {
     // */
     // @Test
     // public void testGetAmountFractionDenominator() {
-    // assertEquals(1, RoundedMoney.of("XXX", new BigDecimal("1.23455645"))
+    // assertEquals(1, RoundedMoney.of(new BigDecimal("1.23455645"), "XXX")
     // .getAmountFractionDenominator());
     // assertEquals(100, RoundedMoney.of( 1)
     // .getAmountFractionDenominator());
@@ -1028,11 +1029,11 @@ public class RoundedMoneyTest {
         assertNotSame(m, a);
         assertEquals(m.getCurrency(), a.getCurrency());
         assertEquals(RoundedMoney.of(-100, m.getCurrency()), a);
-        adj = amount -> amount.multiply(2).getFactory().setCurrency(MonetaryCurrencies.getCurrency("CHF")).create();
+        adj = amount -> amount.multiply(2).getFactory().setCurrency(Monetary.getCurrency("CHF")).create();
         a = m.with(adj);
         assertNotNull(a);
         assertNotSame(m, a);
-        assertEquals(MonetaryCurrencies.getCurrency("CHF"), a.getCurrency());
+        assertEquals(Monetary.getCurrency("CHF"), a.getCurrency());
         assertEquals(RoundedMoney.of(new BigDecimal("2.47"), a.getCurrency()), a);
     }
 
@@ -1124,5 +1125,49 @@ public class RoundedMoneyTest {
     public void testCreatingFromDoubleNegativeInfinity(){
     	RoundedMoney.of(Double.NEGATIVE_INFINITY, "XXX");
     }
+
+    @Test(expectedExceptions = NullPointerException.class)
+    public void shouldRerturnErrorWhenUsingZeroTheCurrencyIsNull() {
+    	FastMoney.zero(null);
+    	Assert.fail();
+    }
+
+    @Test
+    public void shouldRerturnZeroWhenUsingZero() {
+    	MonetaryAmount zero = RoundedMoney.zero(DOLLAR);
+    	assertEquals(BigDecimal.ZERO, zero.getNumber().numberValue(BigDecimal.class));
+    	assertEquals(DOLLAR, zero.getCurrency());
+    }
+
+   @Test(expectedExceptions = NullPointerException.class)
+   public void shouldRerturnErrorWhenUsingOfMinorTheCurrencyIsNull() {
+   	RoundedMoney.ofMinor(null, 1234L);
+   	Assert.fail();
+   }
+
+   @Test
+   public void shouldRerturnMonetaryAmount() {
+   	MonetaryAmount amount = RoundedMoney.ofMinor(DOLLAR, 1234L);
+   	assertEquals(Double.valueOf(12.34), amount.getNumber().doubleValue());
+   	assertEquals(DOLLAR, amount.getCurrency());
+   }
+
+
+	@Test(expectedExceptions = IllegalArgumentException.class)
+	public void shouldReturnErrorWhenCurrencyIsInvalid() {
+		RoundedMoney.ofMinor(new InvalidCurrency(), 1234L);
+	}
+
+	@Test(expectedExceptions = IllegalArgumentException.class)
+	public void shouldReturnErrorWhenFractionDigitIsNegative() {
+		RoundedMoney.ofMinor(DOLLAR, 1234L, -2);
+	}
+
+	@Test
+	public void shouldRerturnMonetaryAmountUsingFractionDigits() {
+		MonetaryAmount amount = RoundedMoney.ofMinor(DOLLAR, 1234L, 3);
+		assertEquals(Double.valueOf(1.234), amount.getNumber().doubleValue());
+		assertEquals(DOLLAR, amount.getCurrency());
+	}
 
 }

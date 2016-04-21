@@ -171,25 +171,25 @@ You can use the currency code to access currencies.
 [source,java]
 .Accessing currencies by currency code
 --------------------------------------------
-CurrencyUnit currencyCHF = MonetaryCurrencies.getCurrencyUnit("CHF");
-CurrencyUnit currencyUSD = MonetaryCurrencies.getCurrencyUnit("USD");
-CurrencyUnit currencyEUR = MonetaryCurrencies.getCurrencyUnit("EUR");
+CurrencyUnit currencyCHF = Monetary.getCurrency("CHF");
+CurrencyUnit currencyUSD = Monetary.getCurrency("USD");
+CurrencyUnit currencyEUR = Monetary.getCurrency("EUR");
 --------------------------------------------
 ////
 
 [source,java]
 .通貨コードで通貨を取得する
 --------------------------------------------
-CurrencyUnit currencyCHF = MonetaryCurrencies.getCurrencyUnit("CHF");
-CurrencyUnit currencyUSD = MonetaryCurrencies.getCurrencyUnit("USD");
-CurrencyUnit currencyEUR = MonetaryCurrencies.getCurrencyUnit("EUR");
+CurrencyUnit currencyCHF = Monetary.getCurrency("CHF");
+CurrencyUnit currencyUSD = Monetary.getCurrency("USD");
+CurrencyUnit currencyEUR = Monetary.getCurrency("EUR");
 --------------------------------------------
 
 ////
 Hereby all codes available in the underlying JDK are mapped by default.
 ////
 
-使用中のJDKで使用可能なすべての通貨コードが、デフォルトでマッピングされています。
+使用中のJDKの +java.util.Currency+ で使用可能なすべての通貨コードが、デフォルトでマッピングされています。
 （訳注:なんのことか？要調査）
 
 ////
@@ -225,18 +225,18 @@ Similarly to +java.util.Currency+ a +CurrencyUnit+ can be accessed using this +L
 [source,java]
 .Accessing currencies by Locale
 --------------------------------------------
-CurrencyUnit currencyCHF = MonetaryCurrencies.getCurrencyUnit(new Locale("", "SUI")); // Switzerland
-CurrencyUnit currencyUSD = MonetaryCurrencies.getCurrencyUnit(new Locale("", "USA")); // United States of America
-CurrencyUnit currencyEUR = MonetaryCurrencies.getCurrencyUnit(new Locale("", "GER")); // Germany
+CurrencyUnit currencyCHF = Monetary.getCurrency(new Locale("", "SUI")); // Switzerland
+CurrencyUnit currencyUSD = Monetary.getCurrency(new Locale("", "USA")); // United States of America
+CurrencyUnit currencyEUR = Monetary.getCurrency(new Locale("", "GER")); // Germany
 --------------------------------------------
 ////
 
 [source,java]
 .ロケールを使って通貨を取得する
 --------------------------------------------
-CurrencyUnit currencyCHF = MonetaryCurrencies.getCurrencyUnit(new Locale("", "SUI")); // スイス
-CurrencyUnit currencyUSD = MonetaryCurrencies.getCurrencyUnit(new Locale("", "USA")); // アメリカ合衆国
-CurrencyUnit currencyEUR = MonetaryCurrencies.getCurrencyUnit(new Locale("", "GER")); // ドイツ
+CurrencyUnit currencyCHF = Monetary.getCurrency(new Locale("", "SUI")); // スイス
+CurrencyUnit currencyUSD = Monetary.getCurrency(new Locale("", "USA")); // アメリカ合衆国
+CurrencyUnit currencyEUR = Monetary.getCurrency(new Locale("", "GER")); // ドイツ
 --------------------------------------------
 
 ////
@@ -259,14 +259,14 @@ Also all currently known currencies can be accessed:
 [source,java]
 .Accessing all currencies
 --------------------------------------------
-Collection<CurrencyUnit> allCurrencies = MonetaryCurrencies.getCurrencies();
+Collection<CurrencyUnit> allCurrencies = Monetary.getCurrencies();
 --------------------------------------------
 ////
 
 [source,java]
 .すべての通貨を取得する
 --------------------------------------------
-Collection<CurrencyUnit> allCurrencies = MonetaryCurrencies.getCurrencies();
+Collection<CurrencyUnit> allCurrencies = Monetary.getCurrencies();
 --------------------------------------------
 
 ////
@@ -376,7 +376,7 @@ currency instances that then can be registered using the static methods:
 
 ////
 For adding additional CurrencyUnit instances to the +MonetaryCurrencies+ singleton, you must implement an instance
-of +CurrencyProvider+. Following a minimal example, hereby also reusing the +BuildableCurrencyUnit+ class, that
+of +CurrencyProviderSpi+. Following a minimal example, hereby also reusing the +BuildableCurrencyUnit+ class, that
 also provides currencies for Bitcoin:
 訳注: CurrencyProvider -> CurrencyProviderSpi
 訳注: reusingしてない
@@ -396,13 +396,13 @@ public final class BitCoinProvider implements CurrencyProviderSpi{
     private Set<CurrencyUnit> bitcoinSet = new HashSet<>();
 
     public BitCoinProvider(){
-       bitcoinSet.add(new BuildableCurrencyUnit.Builder("BTC").build());
+       bitcoinSet.add(CurrencyUnitBuilder.of("BTC", "MyCurrencyBuilder").build());
        bitcoinSet = Collections.unmodifiableSet(bitcoinSet);
     }
 
     /**
      * Return a {@link CurrencyUnit} instances matching the given
-     * {@link javax.money.CurrencyContext}. 訳注→CurrencyQuery
+     * {@link javax.money.CurrencyQuery}.
      *
      * @param query the {@link javax.money.CurrencyQuery} containing the parameters determining the query. not null.
      * @return the corresponding {@link CurrencyUnit}s matching, never null.
@@ -410,10 +410,10 @@ public final class BitCoinProvider implements CurrencyProviderSpi{
     @Override
     public Set<CurrencyUnit> getCurrencies(CurrencyQuery query){
        // only ensure BTC is the code, or it is a default query.
-       if(query.isDefault()){
-         if(query.getCurrencyCodes().contains("BTC") || query.getCurrencyCodes().isEmpty()){
+       if(query.isEmpty()
+           || query.getCurrencyCodes().contains("BTC")
+          || query.getCurrencyCodes().isEmpty()){
            return bitcoinSet;
-         }
        }
        return Collections.emptySet();
     }
@@ -510,13 +510,11 @@ public class BitCoinProvider implements CurrencyProviderSpi{
 
 ////
 Now given this example it is obvious that the tricky part is to define, when exactly a given +CurrencyQuery+
-should be targeted by this provider, or otherwise, be simply ignored. In our case just provide an additional
-ISO code, so it is a good idea to just only return data for _default_ query types. Additionally we only return our code
+should be targeted by this provider, or otherwise, be simply ignored. Our case just provides an additional
+currency code, so it is a good idea to just only return data for _default_ query types. Additionally we only return our code
 sublist, when the according code is requested, or a unspecified request is performed.
-訳注: In our case -> because our case
 訳注: our code sublistではない
 訳注: default = 国名コードってこと？
-訳注: 通貨コードであってISOコードではないのでは。
 ////
 
 通貨プロバイダを提供するにあたって一番やっかいなことは、 +CurrencyQuery+ に対して通貨単位を戻すか、
@@ -533,6 +531,8 @@ _default_ クエリタイプに対してデータを返すだけで充分です�
 ==== カスタムの通貨単位を作る
 
 ////
+You can use the MonetaryCurrencies static methods to register currencies as follows.
+
 [source,java]
 .Example of registering +CurrencyUnit+ instances programmatically.
 --------------------------------------------
@@ -544,10 +544,14 @@ MonetaryCurrencies.registerCurrency(unit, Locale.MyCOUNTRY);
 --------------------------------------------
 ////
 
+次のように通貨を登録するためにMonetaryCurrenciesのstaticメソッドが使えます。
+
 [source,java]
 .+CurrencyUnit+ のインスタンスをプログラム上で登録する例
 --------------------------------------------
-CurrencyUnit unit = CurrencyUnitBuilder.of("FLS22").setDefaultFractionUnits(3).build();
+CurrencyUnit unit = CurrencyUnitBuilder.of("FLS22", "MyCurrencyProvider")
+    .setDefaultFractionDigits(3)
+    .build();
 
 // 通貨単位を登録する
 MonetaryCurrencies.registerCurrency(unit);
@@ -567,46 +571,18 @@ a register flag to the call: So the same can be rewritten as follows:
 [source,java]
 .Example of registering +CurrencyUnit+ instances programmatically, using +CurrencyUnitBuilder+.
 --------------------------------------------
-CurrencyUnitBuilder.of("FLS22").setDefaultFractionUnits(3).build(true /* register */);
+CurrencyUnitBuilder.of("FLS22", "MyCurrencyProvider")
+    .setDefaultFractionDigits(3)
+    .build(true /* register */);
 --------------------------------------------
 ////
 
 [source,java]
 .+CurrencyUnitBuilder+ を使って +CurrencyUnit+ のインスタンスをプログラム上で登録する例
 --------------------------------------------
-CurrencyUnitBuilder.of("FLS22").setDefaultFractionUnits(3).build(true /* 登録する */);
---------------------------------------------
-
-////
-Alternatively one may use the +MonetaryCurrencies+ static methods as follows:
-
-上とかぶってる！
-////
-
-あるいは、 +MonetaryCurrencies+ クラスのstaticメソッドを使って、次のように登録することも可能です。
-
-////
-[source,java]
-.Example of registering +CurrencyUnit+ instances programmatically, using +MonetaryCurrencies+ .
---------------------------------------------
-CurrencyUnit unit = new CurrencyUnitBuilder.of("FLS22").setDefaultFractionUnits(3).build();
-
-// registering it
-MonetaryCurrencies.registerCurrency(unit);
-MonetaryCurrencies.registerCurrency(unit, Locale.MyCOUNTRY);
---------------------------------------------
-
-訳注: たぶん間違ってる。new ... じゃないはず。
-////
-
-[source,java]
-.+MonetaryCurrencies+ を使って +CurrencyUnit+ のインスタンスをプログラム上で登録する例
---------------------------------------------
-CurrencyUnit unit = CurrencyUnitBuilder.of("FLS22").setDefaultFractionUnits(3).build();
-
-// 登録する
-MonetaryCurrencies.registerCurrency(unit);
-MonetaryCurrencies.registerCurrency(unit, Locale.MyCOUNTRY);
+CurrencyUnitBuilder.of("FLS22", "MyCurrencyProvider")
+    .setDefaultFractionDigits(3)
+    .build(true /* register */);
 --------------------------------------------
 
 ////
@@ -634,7 +610,7 @@ Monetary amounts are the key abstraction of JSR 354. _Moneta_ hereby provides di
   and scale.
 * +FastMoney+ represents numeric representation that was optimized for speed. It represents a monetary amount only
   as a integral number of type +long+, hereby using a number scale of 100'000 (10^5).
-* +RoundedMoney+ finally provides an amount implementation thar is implicitly rounded after each operation.
+* +RoundedMoney+ finally provides an amount implementation that is implicitly rounded after each operation.
 訳注: arithmetic operation → 計算
 ////
 
@@ -679,16 +655,16 @@ new instances of amounts. E.g. instances of +FastMoney+ can be created as follow
 
 ////
 [source,java]
-.Creating instances of +FastMoney+ using the +MonetaryAmounts+ singleton:
+.Creating instances of +FastMoney+ using the +Monetary+ singleton:
 --------------------------------------------
 FastMoney m = MonetaryAmounts.getAmountFactory(FastMoney.class).setCurrency("USD").setNumber(200.20).create();
 --------------------------------------------
 ////
 
 [source,java]
-.+MonetaryAmounts+ シングルトンを使って +FastMoney+ のインスタンスを生成する:
+.+Monetary+ シングルトンを使って +FastMoney+ のインスタンスを生成する:
 --------------------------------------------
-FastMoney m = MonetaryAmounts.getAmountFactory(FastMoney.class).setCurrency("USD").setNumber(200.20).create();
+FastMoney m = Monetary.getAmountFactory(FastMoney.class).setCurrency("USD").setNumber(200.20).create();
 --------------------------------------------
 
 ////
@@ -697,19 +673,18 @@ Additionally _Moneta_ also supports static factory methods on the types directly
 [source,java]
 .Creating instances of +FastMoney+ using the +MonetaryAmounts+ singleton:
 --------------------------------------------
-FastMoney m = FastMoney.of("USD", 200.20);
+FastMoney m = FastMoney.of(200.20, "USD");
 --------------------------------------------
 
-訳注: キャプションが間違ってる
 ////
 
 これに加えて、 _Moneta_ の金額実装クラスは、staticなファクトリメソッドを提供しています。
 したがって、上述のコードは次のコードと等価です。
 
 [source,java]
-.+FastMoney+ のファクトリメソッドを使って +FastMoney+ のインスタンスを生成する
+.staticなファクトリメソッドを使って +FastMoney+ のインスタンスを生成する
 --------------------------------------------
-FastMoney m = FastMoney.of("USD", 200.20);
+FastMoney m = FastMoney.of(200.20, "USD");
 --------------------------------------------
 
 ////
@@ -718,8 +693,8 @@ Creation of +Money+ instances is similar:
 [source,java]
 .Creating instances of +Money+:
 --------------------------------------------
-Money m1 = MonetaryAmounts.getAmountFactory(Money.class).setCurrency("USD").setNumber(200.20).create();
-Money m2 = Money.of("USD", 200.20);
+Money m1 = Monetary.getAmountFactory(Money.class).setCurrency("USD").setNumber(200.20).create();
+Money m2 = Money.of(200.20, "USD");
 --------------------------------------------
 ////
 
@@ -728,8 +703,8 @@ Money m2 = Money.of("USD", 200.20);
 [source,java]
 .+Money+ のインスタンスを生成する
 --------------------------------------------
-Money m1 = MonetaryAmounts.getAmountFactory(Money.class).setCurrency("USD").setNumber(200.20).create();
-Money m2 = Money.of("USD", 200.20);
+Money m1 = Monetary.getAmountFactory(Money.class).setCurrency("USD").setNumber(200.20).create();
+Money m2 = Money.of(200.20, "USD");
 --------------------------------------------
 
 ////
@@ -752,14 +727,14 @@ explicitly by passing a +MathContext+ as part of a +MonetaryContext+:
 [source,java]
 .Creating instances of +Money+ configuring the +MathContext+ to be used.
 --------------------------------------------
-Money money = Money.of("CHF", 200, MonetaryContextBuilder.create().set(MathContext.DECIMAL128).build());
+Money money = Money.of(200, "CHF", MonetaryContextBuilder.of().set(MathContext.DECIMAL128).build());
 --------------------------------------------
 ////
 
 [source,java]
 .+Money+ が +MathContext+ を使うように設定する
 --------------------------------------------
-Money money = Money.of("CHF", 200, MonetaryContextBuilder.create().set(MathContext.DECIMAL128).build());
+Money money = Money.of(200, "CHF", MonetaryContextBuilder.of().set(MathContext.DECIMAL128).build());
 --------------------------------------------
 
 ////
@@ -768,9 +743,9 @@ Using the JSR's main API allows to achieve the same as follows:
 [source,java]
 .Creating instances of +Money+ configuring the +MathContext+ to be used, using the +MonetaryAmountFactory+.
 --------------------------------------------
-Money money = MonetaryAmounts.getAmountFactory(Money.class)
-                              .setCurrencyUnit("CHF").setNumber(200).
-                              ,setContext(MonetaryContextBuilder.create().set(MathContext.DECIMAL128).build())
+Money money = Monetary.getAmountFactory(Money.class)
+                              .setCurrencyUnit("CHF").setNumber(200)
+                              .setContext(MonetaryContextBuilder.of().set(MathContext.DECIMAL128).build())
                               .create();
 --------------------------------------------
 ////
@@ -780,9 +755,9 @@ JSRのAPIを使うと、同じ処理は次のように書けます。
 [source,java]
 .+Money+ が +MathContext+ を使うように、 +MonetaryAmountFactory+ を使って設定する
 --------------------------------------------
-Money money = MonetaryAmounts.getAmountFactory(Money.class)
-                              .setCurrencyUnit("CHF").setNumber(200).
-                              ,setContext(MonetaryContextBuilder.create().set(MathContext.DECIMAL128).build())
+Money money = Monetary.getAmountFactory(Money.class)
+                              .setCurrencyUnit("CHF").setNumber(200)
+                              .setContext(MonetaryContextBuilder.of().set(MathContext.DECIMAL128).build())
                               .create();
 --------------------------------------------
 
@@ -875,12 +850,11 @@ For this you have to add the following contents to +META-INF/services/javax.mone
 
 ////
 [source,listing]
-.Creating instances of +Money+:
+.Providing custom monetary amount implementations
 --------------------------------------------
 my.fully.qualified.MonetaryAmountFactoryProviderImplClass
 --------------------------------------------
 
-訳注: キャプションが間違っている
 ////
 
 [source,listing]
@@ -893,14 +867,13 @@ my.fully.qualified.MonetaryAmountFactoryProviderImplClass
 For further ease of use, your implementations may furthermore provide static factory methods, e.g.
 
 [source,java]
-.Creating instances of +Money+:
+.Static factory methods of the custom monetary amount implementation:
 --------------------------------------------
 public static MyMoney of(String currencyCode, double number);
 public static MyMoney of(String currencyCode, long number);
 public static MyMoney of(String currencyCode, Number number);
 --------------------------------------------
 
-訳注: キャプションが間違っている
 ////
 
 より使いやすくするため、金額実装クラスにstaticなファクトリメソッドを含ませるのが良いかもしれません。
@@ -947,10 +920,9 @@ important to mention, if doing so:
 
 ////
 Nevertheless there are strategies to mitigate these possible issues. The most easy and obvious strategy hereby is
-simply explicitly *converting explicitly to the required target type, before performing any operations*. This can
+simply *converting explicitly to the required target type, before performing any operations*. This can
 be easily achieved, since every implementation in _moneta_ provides corresponding static +from()+ methods:
 
-訳注: explicitlyが重複
 ////
 
 上述の問題を緩和するためには、いくつかの方法があります。
@@ -960,7 +932,7 @@ _Moneta_ の金額実装クラスは、いずれもstaticな
 
 ////
 [source,java]
-.Creating instances of +Money+:
+.Using the custom monetary amount implementation with +Money+:
 --------------------------------------------
 MyMoney money1;
 Money money = Money.from(myMoney);
@@ -970,11 +942,10 @@ money = Money.from(fastMoney);
 fastMoney = FastMoney.from(money);
 --------------------------------------------
 
-訳注: キャプションが間違っている
 ////
 
 [source,java]
-.計算の前に変換を行う
+.カスタム金額クラスを +Money+ と共に使用する
 --------------------------------------------
 MyMoney money1;
 Money money = Money.from(myMoney);
@@ -996,7 +967,7 @@ require rounding, when creating new instances of +FastMoney+.
 ==== Additional Provided Extension Points
 
 The _moneta_ reference implementation also provides implementations for several commonly used simple monetary functions
-in the +org.javamoney.moneta.functions_ package:
+in the +org.javamoney.moneta.functions+ package:
 
 訳注: 「拡張ポイント」ではないだろう
 ////
@@ -1147,7 +1118,7 @@ M money1 = money1.add(M.of(EURO, 1234567.3444));
 money1 = money1.subtract(M.of(EURO, 232323));
 money1 = money1.multiply(3.4);
 money1 = money1.divide(5.456);
-money1 = money1.with(MonetaryRoundings.getRounding());
+money1 = money1.with(Monetary.getRounding());
 --------------------------------------------
 ////
 
@@ -1231,8 +1202,8 @@ the +RoundingQuery+ passed:
 [source,java]
 .Access and apply arithmetic rounding.
 --------------------------------------------
-MonetaryRounding rounding = MonetaryRoundings.getRounding(
-                               RoundingQueryBuilder.create().setScale(4).set(RoundingMode.HALF_UP).build());
+MonetaryRounding rounding = Monetary.getRounding(
+                               RoundingQueryBuilder.of().setScale(4).set(RoundingMode.HALF_UP).build());
 MonetaryAmount amt = ...;
 MonetaryAmount roundedAmount = amt.with(rounding);
 --------------------------------------------
@@ -1261,9 +1232,9 @@ based on the current amount instance to be rounded:
 [source,java]
 .Access and apply default rounding.
 --------------------------------------------
-MonetaryRounding rounding = MonetaryRoundings.getDefaultRounding();
+MonetaryRounding rounding = Monetary.getDefaultRounding();
 MonetaryAmount amt = ...;
-MonetaryAmount roundedAmount = amt.with(rounding); // implicitly uses MonetaryRoundings.getRounding(CurrencyUnit);
+MonetaryAmount roundedAmount = amt.with(rounding); // implicitly uses Monetary.getRounding(CurrencyUnit);
 --------------------------------------------
 ////
 
@@ -1275,26 +1246,25 @@ MonetaryAmount roundedAmount = amt.with(rounding); // implicitly uses MonetaryRo
 [source,java]
 .デフォルトの丸め方を取得・使用する
 --------------------------------------------
-MonetaryRounding rounding = MonetaryRoundings.getDefaultRounding();
+MonetaryRounding rounding = Monetary.getDefaultRounding();
 MonetaryAmount amt = ...;
-MonetaryAmount roundedAmount = amt.with(rounding); // implicitly uses MonetaryRoundings.getRounding(CurrencyUnit);
+MonetaryAmount roundedAmount = amt.with(rounding); // implicitly uses Monetary.getRounding(CurrencyUnit);
 --------------------------------------------
 
 ////
-Also you can access the default rounding for a given +CurrencyUnit+. Be default this will return an arithmetic rounding
+Also you can access the default rounding for a given +CurrencyUnit+. By default this will return an arithmetic rounding
 based on the currency's _default fraction digits_, but it may also return a non standard rounding, where useful.
 
 [source,java]
 .Access and apply default currency rounding.
 --------------------------------------------
 CurrencyUnit currency = ...;
-MonetaryRounding rounding = MonetaryRoundings.getRounding(currency);
+MonetaryRounding rounding = Monetary.getRounding(currency);
 MonetaryAmount amt = ...;
-MonetaryAmount roundedAmount = amt.with(rounding); // implicitly uses MonetaryRoundings.getRounding(CurrencyUnit);
+MonetaryAmount roundedAmount = amt.with(rounding); // uses Monetary.getRounding(CurrencyUnit);
 --------------------------------------------
 
 訳注: this will return ...が怪しい
-訳注: implicitlyでない。上のコードのコピペ
 ////
 
 +CurrencyUnit+ が表す通貨のデフォルトの丸め方も取得できます。
@@ -1305,9 +1275,9 @@ MonetaryAmount roundedAmount = amt.with(rounding); // implicitly uses MonetaryRo
 .通貨のデフォルトの丸め方を取得・使用する
 --------------------------------------------
 CurrencyUnit currency = ...;
-MonetaryRounding rounding = MonetaryRoundings.getRounding(currency);
+MonetaryRounding rounding = Monetary.getRounding(currency);
 MonetaryAmount amt = ...;
-MonetaryAmount roundedAmount = amt.with(rounding);
+MonetaryAmount roundedAmount = amt.with(rounding); // uses Monetary.getRounding(CurrencyUnit);
 --------------------------------------------
 
 ////
@@ -1318,8 +1288,8 @@ For Swiss Francs also a corresponding cash rounding is accessible. In Switzerlan
 [source,java]
 .Access Swiss Francs Cash Rounding
 --------------------------------------------
-MonetaryRounding rounding = MonetaryRoundings.getRounding(MonetaryCurrencies.getCurrency("CHF"),
-  RoundingQueryBuilder.create().set("cashRounding", true).build()
+MonetaryRounding rounding = Monetary.getRounding(Monetary.getCurrency("CHF"),
+  RoundingQueryBuilder.of().set("cashRounding", true).build()
 );
 MonetaryAmount amt = ...;
 MonetaryAmount roundedAmount = amt.with(rounding); // amount rounded in CHF cash rounding
@@ -1335,91 +1305,11 @@ CHF（スイスフラン）用の丸め方を取得する際に、
 [source,java]
 .スイスフランの現金決済用の丸め方を取得する
 --------------------------------------------
-MonetaryRounding rounding = MonetaryRoundings.getRounding(MonetaryCurrencies.getCurrency("CHF"),
-  RoundingQueryBuilder.create().set("cashRounding", true).build()
+MonetaryRounding rounding = Monetary.getRounding(Monetary.getCurrency("CHF"),
+  RoundingQueryBuilder.of().set("cashRounding", true).build()
 );
 MonetaryAmount amt = ...;
 MonetaryAmount roundedAmount = amt.with(rounding); // CHFの現金決済用に丸められた金額
---------------------------------------------
-
-////
-==== Custom Roundings
-
-_Moneta_ does not provide any custom roundings by default. Nevertheless you can add custom roundings by registering
-instances of +RoundingProviderSpi+.
-////
-
-==== カスタムの丸め方
-
-（訳注: この節は次節と同内容です）
-
-_Moneta_ はデフォルトではカスタムの丸め方を提供していません。
-その代わり、自身のカスタムの丸め方を、 +RoundingProviderSpi+ のインスタンスを通して登録することができます。
-
-////
-[source,java]
-.Implement a custom +RoundingProviderSpi+, registered as "myPersonalRounding"
---------------------------------------------
-public final class TestRoundingProvider implements RoundingProviderSpi{
-
-    private static final MonetaryRounding ROUNDING = new MyCustomRounding();
-
-    private final Set<String> roundingNames;
-
-    public TestRoundingProvider(){
-        Set<String> names = new HashSet<>();
-        names.add("myPersonalRounding");
-        this.roundingNames = Collections.unmodifiableSet(names);
-    }
-
-    @Override
-    public MonetaryRounding getRounding(RoundingQuery roundingQuery){
-        if("myPersonalRounding".equals(roundingQuery.getRoundingName())){
-            return ROUNDING;
-        }
-        return null;
-    }
-
-    @Override
-    public Set<String> getRoundingNames(){
-        return roundingNames;
-    }
-
-}
---------------------------------------------
-
-訳注: この節不要
-////
-
-[source,java]
-.カスタムの +RoundingProviderSpi+ を実装し、 "myPersonalRounding" として登録
---------------------------------------------
-public final class TestRoundingProvider implements RoundingProviderSpi{
-
-    private static final MonetaryRounding ROUNDING = new MyCustomRounding();
-
-    private final Set<String> roundingNames;
-
-    public TestRoundingProvider(){
-        Set<String> names = new HashSet<>();
-        names.add("myPersonalRounding");
-        this.roundingNames = Collections.unmodifiableSet(names);
-    }
-
-    @Override
-    public MonetaryRounding getRounding(RoundingQuery roundingQuery){
-        if("myPersonalRounding".equals(roundingQuery.getRoundingName())){
-            return ROUNDING;
-        }
-        return null;
-    }
-
-    @Override
-    public Set<String> getRoundingNames(){
-        return roundingNames;
-    }
-
-}
 --------------------------------------------
 
 ////
@@ -1442,6 +1332,8 @@ public final class TestRoundingProvider implements RoundingProviderSpi{
 
     private static final MonetaryRounding ROUNDING = new MyCurrencyRounding();
 
+    private final Set<String> roundingNames;
+
     public TestRoundingProvider(){
         Set<String> names = new HashSet<>();
         names.add("custom1");
@@ -1450,7 +1342,7 @@ public final class TestRoundingProvider implements RoundingProviderSpi{
 
     @Override
     public MonetaryRounding getRounding(RoundingQuery roundingQuery){
-        CurrencyUnit cu = roundingQuery.getCurrencyUnit();
+        CurrencyUnit cu = roundingQuery.getCurrency();
         if(cu!=null && "BTC".equals(cu.getCurrencyCode())){
             return ROUNDING;
         }
@@ -1473,6 +1365,8 @@ public final class TestRoundingProvider implements RoundingProviderSpi{
 
     private static final MonetaryRounding ROUNDING = new MyCurrencyRounding();
 
+    private final Set<String> roundingNames;
+
     public TestRoundingProvider(){
         Set<String> names = new HashSet<>();
         names.add("custom1");
@@ -1481,7 +1375,7 @@ public final class TestRoundingProvider implements RoundingProviderSpi{
 
     @Override
     public MonetaryRounding getRounding(RoundingQuery roundingQuery){
-        CurrencyUnit cu = roundingQuery.getCurrencyUnit();
+        CurrencyUnit cu = roundingQuery.getCurrency();
         if(cu!=null && "BTC".equals(cu.getCurrencyCode())){
             return ROUNDING;
         }
@@ -1609,7 +1503,7 @@ currency:
 .Getting a +CurrencyConversion+ from an +ExchangeRateProvider+
 --------------------------------------------
 ExchangeRateProvider rateProvider = MonetaryConversions.getExchangeRateProvider();
-CurrencyConversion conversion = rateProvider.getConversion("CHF");
+CurrencyConversion conversion = rateProvider.getCurrencyConversion("CHF");
 
 MonetaryAmount amountInUSD = ...;
 MonetaryAmount amountInCHF = amountInUSD.with(conversion);
@@ -1620,7 +1514,7 @@ MonetaryAmount amountInCHF = amountInUSD.with(conversion);
 .+ExchangeRateProvider+ から +CurrencyConversion+ を取得する
 --------------------------------------------
 ExchangeRateProvider rateProvider = MonetaryConversions.getExchangeRateProvider();
-CurrencyConversion conversion = rateProvider.getConversion("CHF");
+CurrencyConversion conversion = rateProvider.getCurrencyConversion("CHF");
 
 MonetaryAmount amountInUSD = ...;
 MonetaryAmount amountInCHF = amountInUSD.with(conversion);
@@ -1665,27 +1559,26 @@ provides data using the intermediate +SDR+ currency unit.
 * *IDENT* は、換算元と換算先が同じ通貨である場合に限り、係数を1.0とする換算レートを提供します。
 
 ////
-By default the chain of rate providers is configured as +IDENT,ECB,IMF,ECB-HIST+. As defined by the JSR the conversion
+By default the chain of rate providers is configured as +IDENT,ECB,IMF,ECB-HIST,ECB-HIST90+. As defined by the JSR the conversion
 provider chain can be configured in +javamoney.properties+ as follows:
 
 [source,listing]
-.Getting a +CurrencyConversion+ from an +ExchangeRateProvider+
+.Overriding the conversion provider chain
 --------------------------------------------
 #Currency Conversion
-conversion.default-chain=IDENT,ECB,IMF,ECB-HIST
+conversion.default-chain=IDENT,ECB,IMF,ECB-HIST,ECB-HIST90
 --------------------------------------------
-訳注: キャプションが間違っている
 ////
 
-デフォルトのプロバイダチェーンは +IDENT,ECB,IMF,ECB-HIST+ です。
+デフォルトのプロバイダチェーンは +IDENT,ECB,IMF,ECB-HIST,ECB-HIST90+ です。
 通貨換算のプロバイダのチェーンは、
 +javamoney.properties+ ファイルで次のように設定変更できるよう、JSRに定義されています。
 
 [source,listing]
-.デフォルトの通貨換算のプロバイダチェーンを変更する
+.通貨換算プロバイダチェーンを上書きする
 --------------------------------------------
 #Currency Conversion
-conversion.default-chain=IDENT,ECB,IMF,ECB-HIST
+conversion.default-chain=IDENT,ECB,IMF,ECB-HIST,ECB-HIST90
 --------------------------------------------
 
 ////
@@ -1773,9 +1666,8 @@ load.IMFRateProvider.urls=http://www.imf.org/external/np/fin/data/rms_five.aspx?
 +MonetaryAmountFormat+ instances can be accessed from the +MonetaryFormats+ singleton. Similar to the Java
 platform, formats can be accessed by passing a country +Locale+. But JSR 354 also supports accessing formats by
 a (unique) name or even given a complex query, that allows to pass any number of parameters to configure the
-format to use. Also compared to the Java platform, the formats are thread-safe and immutable.
+format to use. In contrast to DecimalFormat, the JSR 354 formats are thread-safe and immutable.
 
-訳注: ここでいうJava platformは、java.util.Currency / DecimalFormatのことか？
 ////
 
 == 金額を書式化する
@@ -1793,10 +1685,10 @@ DecimalFormatと異なり、JSR 354の書式は不変でスレッドセーフで
 MonetaryAmountFormat formatCountry = MonetaryFormats.getAmountFormat(Locale.GERMANY);
 MonetaryAmountFormat formatNamed = MonetaryFormats.getAmountFormat("MyCustomFormat");
 MonetaryAmountFormat formatQueried = MonetaryFormats.getAmountFormat(
-  AmountFormatQueryBuilder.create()
+  AmountFormatQueryBuilder.of("MyCustomFormat2")
     .set("strict", true)
     .set("omitNegative", true)
-    .set("omitNegativeSign" "N/A")
+    .set("omitNegativeSign", "N/A")
     .build()
 );
 --------------------------------------------
@@ -1808,10 +1700,10 @@ MonetaryAmountFormat formatQueried = MonetaryFormats.getAmountFormat(
 MonetaryAmountFormat formatCountry = MonetaryFormats.getAmountFormat(Locale.GERMANY);
 MonetaryAmountFormat formatNamed = MonetaryFormats.getAmountFormat("MyCustomFormat");
 MonetaryAmountFormat formatQueried = MonetaryFormats.getAmountFormat(
-  AmountFormatQueryBuilder.create()
+  AmountFormatQueryBuilder.of("MyCustomFormat2")
     .set("strict", true)
     .set("omitNegative", true)
-    .set("omitNegativeSign" "N/A")
+    .set("omitNegativeSign", "N/A")
     .build()
 );
 --------------------------------------------
@@ -1846,20 +1738,20 @@ MonetaryAmount amount = format.parse(formattedString);
 
 ////
 NOTE: Be aware that parsing back an amount in a reverse operation may not always work. If a formatter implements
-      only a unidirectional formatting operation, a +MonetaryFormatException+ will be thrown.
+      only a unidirectional formatting operation, a +MonetaryParseException+ will be thrown.
 ////
 
 NOTE: 書式化された文字列のパースは常にうまく行くとは限りません。
       フォーマッタが金額から文字列への書式化の一方向だけを実装している場合、
-      +MonetaryFormatException+ が発生します。
+      +MonetaryParseException+ が発生します。
 
 ////
 === Customizing the Default Amount Formatters
 
-_Moneta_ basically provides similar formatting options as Java. It is possible to pass a +DecimalFormat+ instance
-as parameter for a +Locale+ vased format query:
+_Moneta_ basically provides similar formatting options to the one of DecimalFormat.
+It is possible to pass a +DecimalFormat+ pattern string
+as a parameter for a +Locale+ based format query:
 
-訳注: ここでの「Java」はDecimalFormatか
 ////
 
 === デフォルトの金額フォーマッタをカスタマイズする
@@ -1869,10 +1761,9 @@ _Moneta_ はDecimalFormatと同じようなオプションを提供していま�
 
 [source,java]
 --------------------------------------------
-DecimalFormat df = ...;
 MonetaryAmountFormat formatQueried = MonetaryFormats.getAmountFormat(
-  AmountFormatQueryBuilder.create(Locale.GERMANY)
-    .set(df)
+  AmountFormatQueryBuilder.of(Locale.GERMANY)
+    .set("pattern", "####,####")
     .build()
 );
 --------------------------------------------
@@ -1896,13 +1787,15 @@ done based on the mechanism as defined by the Java +ServiceLoader+.
 public final class GeeCoinFormatProviderSpi implements MonetaryAmountFormatProviderSpi{
 
     private static final String PROVIDER_NAME = "GeeCoin";
+    private static final String STYLE_NAME = "GeeCoin";
+
     /** The supported locales. */
     private Set<Locale> supportedSets = new HashSet<>();
     /** The provided formats, by name. */
     private Set<String> formatNames = new HashSet<>();
 
     public GeeCoinFormatProviderSpi(){
-        supportedSets.addAll(Locale.CHINA);
+        supportedSets.add(Locale.CHINA);
         supportedSets = Collections.unmodifiableSet(supportedSets);
         formatNames.add("GeeCoin");
         formatNames = Collections.unmodifiableSet(formatNames);
@@ -1926,13 +1819,15 @@ public final class GeeCoinFormatProviderSpi implements MonetaryAmountFormatProvi
     @Override
     public Collection<MonetaryAmountFormat> getAmountFormats(AmountFormatQuery amountFormatQuery){
         Objects.requireNonNull(amountFormatQuery, "AmountFormatContext required");
-        if(!amountFormatQuery.getProviders().isEmpty() && !amountFormatQuery.getProviders().contains(getProviderName())){
+       if(!amountFormatQuery.getProviderNames().isEmpty()
+           && !amountFormatQuery.getProviderNames().contains(getProviderName())){
             return Collections.emptySet();
         }
-        if(!(amountFormatQuery.getFormatName()==null || DEFAULT_STYLE.equals(amountFormatQuery.getFormatName()))){
+        if(!(amountFormatQuery.getFormatName()==null
+           || STYLE_NAME.equals(amountFormatQuery.getFormatName()))){
             return Collections.emptySet();
         }
-        AmountFormatContextBuilder builder = AmountFormatContextBuilder.create(PROVIDER_NAME);
+        AmountFormatContextBuilder builder = AmountFormatContextBuilder.of(PROVIDER_NAME);
         if(amountFormatQuery.getLocale()!=null){
             builder.setLocale(amountFormatQuery.getLocale());
         }
@@ -1961,13 +1856,15 @@ public final class GeeCoinFormatProviderSpi implements MonetaryAmountFormatProvi
 public final class GeeCoinFormatProviderSpi implements MonetaryAmountFormatProviderSpi{
 
     private static final String PROVIDER_NAME = "GeeCoin";
+    private static final String STYLE_NAME = "GeeCoin";
+
     /** サポートするロケールの集合. */
     private Set<Locale> supportedSets = new HashSet<>();
     /** 提供する書式の名前の集合. */
     private Set<String> formatNames = new HashSet<>();
 
     public GeeCoinFormatProviderSpi(){
-        supportedSets.addAll(Locale.CHINA);
+        supportedSets.add(Locale.CHINA);
         supportedSets = Collections.unmodifiableSet(supportedSets);
         formatNames.add("GeeCoin");
         formatNames = Collections.unmodifiableSet(formatNames);
@@ -1991,13 +1888,15 @@ public final class GeeCoinFormatProviderSpi implements MonetaryAmountFormatProvi
     @Override
     public Collection<MonetaryAmountFormat> getAmountFormats(AmountFormatQuery amountFormatQuery){
         Objects.requireNonNull(amountFormatQuery, "AmountFormatContext required");
-        if(!amountFormatQuery.getProviders().isEmpty() && !amountFormatQuery.getProviders().contains(getProviderName())){
+       if(!amountFormatQuery.getProviderNames().isEmpty()
+           && !amountFormatQuery.getProviderNames().contains(getProviderName())){
             return Collections.emptySet();
         }
-        if(!(amountFormatQuery.getFormatName()==null || DEFAULT_STYLE.equals(amountFormatQuery.getFormatName()))){
+        if(!(amountFormatQuery.getFormatName()==null
+           || STYLE_NAME.equals(amountFormatQuery.getFormatName()))){
             return Collections.emptySet();
         }
-        AmountFormatContextBuilder builder = AmountFormatContextBuilder.create(PROVIDER_NAME);
+        AmountFormatContextBuilder builder = AmountFormatContextBuilder.of(PROVIDER_NAME);
         if(amountFormatQuery.getLocale()!=null){
             builder.setLocale(amountFormatQuery.getLocale());
         }
@@ -2023,11 +1922,10 @@ public final class GeeCoinFormatProviderSpi implements MonetaryAmountFormatProvi
 ////
 === Overriding values in javamoney.properties
 
-The reference application supports overriding of the values in +javamoney.properties+ by prefexing the keys with
+The reference implementation supports overriding of the values in +javamoney.properties+ by prefexing the keys with
 a priority value in brackets. Hereby the mechanism reads all +javamoney.properties+ resources visible on the
 classpath. If no priority is annotated, priority=0 is assumed:
 
-訳注: "reference application" → "reference implementation" の誤記か？
 ////
 
 === javamoney.propertiesの値をオーバーライドする
@@ -2052,9 +1950,8 @@ classpath. If no priority is annotated, priority=0 is assumed:
 --------------------------------------------
 
 ////
-If two entries have the same value an exeption is thrown.
+If two entries have the same priority an exeption is thrown.
 
-訳注: "value"は曖昧。 "priority"の方が良い
 ////
 
 2つのエントリが同じ優先度を持っていた場合、例外が発生します。

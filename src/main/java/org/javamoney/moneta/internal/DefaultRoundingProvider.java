@@ -30,12 +30,12 @@ import java.util.*;
  */
 public class DefaultRoundingProvider implements RoundingProviderSpi {
 
-    public static final String DEFAULT_ROUNDING_ID = "default";
-    private Set<String> roundingsIds = new HashSet<>();
+    private static final String DEFAULT_ROUNDING_NAME = "default";
+    private Set<String> roundingsNames = new HashSet<>();
 
     public DefaultRoundingProvider() {
-        roundingsIds.add(DEFAULT_ROUNDING_ID);
-        roundingsIds = Collections.unmodifiableSet(roundingsIds);
+        roundingsNames.add(DEFAULT_ROUNDING_NAME);
+        roundingsNames = Collections.unmodifiableSet(roundingsNames);
     }
 
     @Override
@@ -59,7 +59,7 @@ public class DefaultRoundingProvider implements RoundingProviderSpi {
                 roundingMode = RoundingMode.HALF_EVEN;
             }
             if (Boolean.TRUE.equals(roundingQuery.getBoolean("cashRounding"))) {
-                if (currency.getCurrencyCode().equals("CHF")) {
+                if ("CHF".equals(currency.getCurrencyCode())) {
                     return new DefaultCashRounding(currency, RoundingMode.HALF_UP, 5);
                 } else {
                     return new DefaultCashRounding(currency, 1);
@@ -77,8 +77,8 @@ public class DefaultRoundingProvider implements RoundingProviderSpi {
             return new DefaultRounding(scale, mc.getRoundingMode());
         } else if (roundingMode != null) {
             return new DefaultRounding(scale, roundingMode);
-        } else if (roundingQuery.getRoundingName() != null && DEFAULT_ROUNDING_ID.equals(roundingQuery.getRoundingName())) {
-            return MonetaryRoundings.getDefaultRounding();
+        } else if (roundingQuery.getRoundingName() != null && DEFAULT_ROUNDING_NAME.equals(roundingQuery.getRoundingName())) {
+            return Monetary.getDefaultRounding();
         }
         return null;
     }
@@ -86,7 +86,7 @@ public class DefaultRoundingProvider implements RoundingProviderSpi {
 
     @Override
     public Set<String> getRoundingNames() {
-        return roundingsIds;
+        return roundingsNames;
     }
 
 }

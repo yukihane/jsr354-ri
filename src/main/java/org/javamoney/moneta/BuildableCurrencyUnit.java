@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2012, 2014, Credit Suisse (Anatole Tresch), Werner Keil and others by the @author tag.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -23,7 +23,7 @@ import java.util.Objects;
 /**
  * Implementation of {@link javax.money.CurrencyUnit} that allows to of new instances using a fluent API.
  * Instances created also can be added to the {@link org.javamoney.moneta.internal.ConfigurableCurrencyUnitProvider}
- * singleton, which publishes the instances, so they are visible from the {@link javax.money.MonetaryCurrencies}
+ * singleton, which publishes the instances, so they are visible from the {@link javax.money.Monetary}
  * singleton.
  */
 final class BuildableCurrencyUnit implements CurrencyUnit, Comparable<CurrencyUnit>, Serializable {
@@ -92,7 +92,7 @@ final class BuildableCurrencyUnit implements CurrencyUnit, Comparable<CurrencyUn
     }
 
     @Override
-    public int compareTo(@SuppressWarnings("NullableProblems") CurrencyUnit o) {
+    public int compareTo(CurrencyUnit o) {
         Objects.requireNonNull(o);
         return this.currencyCode.compareTo(o.getCurrencyCode());
     }

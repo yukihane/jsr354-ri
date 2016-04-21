@@ -1,3 +1,18 @@
+/**
+ * Copyright (c) 2012, 2015, Credit Suisse (Anatole Tresch), Werner Keil and others by the @author tag.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
 package org.javamoney.moneta;
 
 import javax.money.convert.ExchangeRateProviderSupplier;
@@ -5,6 +20,7 @@ import javax.money.convert.ExchangeRateProviderSupplier;
 import org.javamoney.moneta.internal.convert.ECBCurrentRateProvider;
 import org.javamoney.moneta.internal.convert.ECBHistoric90RateProvider;
 import org.javamoney.moneta.internal.convert.ECBHistoricRateProvider;
+import org.javamoney.moneta.internal.convert.IMFHistoricRateProvider;
 import org.javamoney.moneta.internal.convert.IMFRateProvider;
 import org.javamoney.moneta.internal.convert.IdentityRateProvider;
 
@@ -16,6 +32,7 @@ import org.javamoney.moneta.internal.convert.IdentityRateProvider;
  * <code>ExchangeRateProvider provider = MonetaryConversions.getExchangeRateProvider(ExchangeRateType.ECB);<code>
  *
  * @author otaviojava
+ * @deprecated Use org.javamoney.moneta.convert.ExchangeRateType instead
  */
 public enum ExchangeRateType implements ExchangeRateProviderSupplier {
     /**
@@ -28,6 +45,11 @@ public enum ExchangeRateType implements ExchangeRateProviderSupplier {
      * {@link IMFRateProvider} implementation.
      */
     IMF("IMF", "Exchange rate to the International Monetary Fond."),
+    /**
+     * Exchange rate to the International Monetary Fond from historic. Uses the
+     * {@link IMFHistoricRateProvider} implementation.
+     */
+    IMF_HIST("IMF-HIST", "Exchange rate to the International Monetary Fond that retrieve historical information on lazy way."),
     /**
      * Exchange rate to European Central Bank (last 90 days). Uses the
      * {@link ECBHistoric90RateProvider} implementation.
@@ -47,9 +69,9 @@ public enum ExchangeRateType implements ExchangeRateProviderSupplier {
             "IDENT",
             "Exchange rate rate with factor one for identical base/term currencies");
 
-    private String type;
+    private final String type;
 
-    private String description;
+    private final String description;
 
     ExchangeRateType(String type, String description) {
         this.type = type;
@@ -61,7 +83,6 @@ public enum ExchangeRateType implements ExchangeRateProviderSupplier {
         return type;
     }
 
-    @Override
     public String getDescription() {
         return description;
     }

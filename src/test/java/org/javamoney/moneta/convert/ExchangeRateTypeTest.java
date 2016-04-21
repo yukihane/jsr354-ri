@@ -23,10 +23,10 @@ import java.util.Objects;
 import javax.money.convert.ExchangeRateProvider;
 import javax.money.convert.MonetaryConversions;
 
-import org.javamoney.moneta.ExchangeRateType;
 import org.javamoney.moneta.internal.convert.ECBCurrentRateProvider;
 import org.javamoney.moneta.internal.convert.ECBHistoric90RateProvider;
 import org.javamoney.moneta.internal.convert.ECBHistoricRateProvider;
+import org.javamoney.moneta.internal.convert.IMFHistoricRateProvider;
 import org.javamoney.moneta.internal.convert.IMFRateProvider;
 import org.javamoney.moneta.internal.convert.IdentityRateProvider;
 import org.testng.annotations.Test;
@@ -63,6 +63,14 @@ public class ExchangeRateTypeTest {
                 .getExchangeRateProvider(ExchangeRateType.IMF);
         assertTrue(Objects.nonNull(prov));
         assertEquals(IMFRateProvider.class, prov.getClass());
+    }
+
+    @Test
+    public void shouldReturnsIMFHistoricRateProvider() {
+        ExchangeRateProvider prov = MonetaryConversions
+                .getExchangeRateProvider(ExchangeRateType.IMF_HIST);
+        assertTrue(Objects.nonNull(prov));
+        assertEquals(IMFHistoricRateProvider.class, prov.getClass());
     }
 
     @Test

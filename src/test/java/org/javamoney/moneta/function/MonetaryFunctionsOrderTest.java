@@ -1,3 +1,18 @@
+/**
+ * Copyright (c) 2012, 2015, Credit Suisse (Anatole Tresch), Werner Keil and others by the @author tag.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
 package org.javamoney.moneta.function;
 
 import static org.javamoney.moneta.function.MonetaryFunctions.sortCurrencyUnit;
@@ -6,31 +21,16 @@ import static org.javamoney.moneta.function.MonetaryFunctions.sortNumber;
 import static org.javamoney.moneta.function.MonetaryFunctions.sortNumberDesc;
 import static org.javamoney.moneta.function.StreamFactory.BRAZILIAN_REAL;
 import static org.javamoney.moneta.function.StreamFactory.DOLLAR;
-import static org.javamoney.moneta.function.StreamFactory.EURO;
 import static org.javamoney.moneta.function.StreamFactory.currencies;
 
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import javax.money.MonetaryAmount;
-import javax.money.convert.ExchangeRateProvider;
-
 import junit.framework.Assert;
 
-import org.javamoney.moneta.Money;
 import org.testng.annotations.Test;
 
 public class MonetaryFunctionsOrderTest {
-
-    private ExchangeRateProvider provider;
-
-    @Test
-    public void init() {
-        provider = new ExchangeRateProviderMock();
-    }
-
+	
     @Test
     public void sortCurrencyUnitTest() {
         MonetaryAmount money = currencies().sorted(sortCurrencyUnit())
@@ -66,34 +66,5 @@ public class MonetaryFunctionsOrderTest {
 
         Assert.assertEquals(BRAZILIAN_REAL, money.getCurrency());
         Assert.assertEquals(BigDecimal.ZERO, money.getNumber().numberValue(BigDecimal.class));
-    }
-
-    @Test
-    public void shouldExecuteValiableOrder() {
-
-        Stream<MonetaryAmount> stream = Stream.of(Money.of(7, EURO),
-                Money.of(9, BRAZILIAN_REAL), Money.of(8, DOLLAR));
-        List<MonetaryAmount> list = stream.sorted(
-                MonetaryFunctions.sortValiable(provider)).collect(
-                Collectors.toList());
-
-        Assert.assertEquals(Money.of(9, BRAZILIAN_REAL), list.get(0));
-        Assert.assertEquals(Money.of(8, DOLLAR), list.get(1));
-        Assert.assertEquals(Money.of(7, EURO), list.get(2));
-    }
-
-    @Test
-    public void shouldExecuteValiableOrderDesc() {
-
-        Stream<MonetaryAmount> stream = Stream.of(Money.of(7, EURO),
-                Money.of(9, BRAZILIAN_REAL), Money.of(8, DOLLAR));
-        List<MonetaryAmount> list = stream.sorted(
-                MonetaryFunctions.sortValiableDesc(provider)).collect(
-                Collectors.toList());
-
-        Assert.assertEquals(Money.of(7, EURO), list.get(0));
-        Assert.assertEquals(Money.of(8, DOLLAR), list.get(1));
-        Assert.assertEquals(Money.of(9, BRAZILIAN_REAL), list.get(2));
-
     }
 }

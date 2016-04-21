@@ -25,28 +25,28 @@ import java.util.Objects;
 
 import javax.money.CurrencyUnit;
 import javax.money.MonetaryAmount;
-import javax.money.MonetaryCurrencies;
+import javax.money.Monetary;
 import javax.money.convert.CurrencyConversion;
 import javax.money.convert.ExchangeRateProvider;
 
-import org.javamoney.moneta.ExchangeRateType;
+import org.javamoney.moneta.convert.ExchangeRateType;
 import org.javamoney.moneta.Money;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
 public class IdentityRateProviderTest {
 
-    private static final CurrencyUnit EURO = MonetaryCurrencies
+    private static final CurrencyUnit EURO = Monetary
             .getCurrency("EUR");
-    private static final CurrencyUnit DOLLAR = MonetaryCurrencies
+    private static final CurrencyUnit DOLLAR = Monetary
             .getCurrency("USD");
-    private static final CurrencyUnit BRAZILIAN_REAL = MonetaryCurrencies
+    private static final CurrencyUnit BRAZILIAN_REAL = Monetary
             .getCurrency("BRL");
 
     private ExchangeRateProvider provider;
 
     @BeforeTest
-    public void setup() throws InterruptedException {
+    public void setup() {
         provider = getExchangeRateProvider(ExchangeRateType.IDENTITY);
     }
 
