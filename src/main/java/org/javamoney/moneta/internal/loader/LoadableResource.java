@@ -15,8 +15,6 @@
  */
 package org.javamoney.moneta.internal.loader;
 
-import org.javamoney.moneta.spi.LoaderService;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -25,14 +23,22 @@ import java.lang.ref.SoftReference;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.javamoney.moneta.spi.LoadDataInformation;
+import org.javamoney.moneta.spi.LoaderService;
+
 /**
  * This class represent a resource that automatically is reloaded, if needed.
- *
+ * To create this instance use: {@link LoadableResourceBuilder}
  * @author Anatole Tresch
  */
 public class LoadableResource {
@@ -44,31 +50,31 @@ public class LoadableResource {
     /**
      * Lock for this instance.
      */
-    private final Object LOCK = new Object();
+    private final Object lock = new Object();
     /**
      * resource id.
      */
-    private String resourceId;
+    private final String resourceId;
     /**
      * The remote URLs to be looked up (first wins).
      */
-    private List<URI> remoteResources = new ArrayList<>();
+    private final List<URI> remoteResources = new ArrayList<>();
     /**
      * The fallback location (classpath).
      */
-    private URI fallbackLocation;
+    private final URI fallbackLocation;
     /**
      * The cache used.
      */
-    private ResourceCache cache;
+    private final ResourceCache cache;
     /**
      * How many times this resource was successfully loaded.
      */
-    private AtomicInteger loadCount = new AtomicInteger();
+    private final AtomicInteger loadCount = new AtomicInteger();
     /**
      * How many times this resource was accessed.
      */
-    private AtomicInteger accessCount = new AtomicInteger();
+    private final AtomicInteger accessCount = new AtomicInteger();
     /**
      * The current data array.
      */
@@ -85,37 +91,29 @@ public class LoadableResource {
     /**
      * The required update policy for this resource.
      */
-    private LoaderService.UpdatePolicy updatePolicy;
+    private final LoaderService.UpdatePolicy updatePolicy;
     /**
      * The resource configuration.
      */
-    private Map<String, String> properties;
+    private final Map<String, String> properties;
 
 
-    /**
-     * Create a new instance.
-     *
-     * @param resourceId       The dataId.
-     * @param cache            The cache to be used for storing remote data locally.
-     * @param properties       The configuration properties.
-     * @param fallbackLocation teh fallback ULR, not null.
-     * @param locations        the remote locations, not null (but may be empty!)
-     */
-    public LoadableResource(String resourceId, ResourceCache cache, LoaderService.UpdatePolicy updatePolicy,
-                            Map<String, String> properties, URI fallbackLocation, URI... locations) {
-        Objects.requireNonNull(resourceId, "resourceId required");
-        Objects.requireNonNull(properties, "properties required");
-        Objects.requireNonNull(updatePolicy, "updatePolicy required");
-        String val = properties.get("cacheTTLMillis");
+    LoadableResource(ResourceCache cache, LoadDataInformation loadDataInformation) {
+
+
+        Objects.requireNonNull(loadDataInformation.getResourceId(), "resourceId required");
+        Objects.requireNonNull(loadDataInformation.getProperties(), "properties required");
+        Objects.requireNonNull(loadDataInformation.getUpdatePolicy(), "updatePolicy required");
+        String val = loadDataInformation.getProperties().get("cacheTTLMillis");
         if (val != null) {
             this.cacheTTLMillis = Long.parseLong(val);
         }
         this.cache = cache;
-        this.resourceId = resourceId;
-        this.updatePolicy = updatePolicy;
-        this.properties = properties;
-        this.fallbackLocation = fallbackLocation;
-        this.remoteResources.addAll(Arrays.asList(locations));
+        this.resourceId = loadDataInformation.getResourceId();
+        this.updatePolicy = loadDataInformation.getUpdatePolicy();
+        this.properties = loadDataInformation.getProperties();
+        this.fallbackLocation = loadDataInformation.getBackupResource();
+        this.remoteResources.addAll(Arrays.asList(loadDataInformation.getResourceLocations()));
     }
 
     /**
@@ -147,12 +145,16 @@ public class LoadableResource {
             clearCache();
         }
         if (!readCache()) {
-            if (loadRemote()) {
+            if (shouldReadDataFromCallBack()) {
                 return loadFallback();
             }
         }
         return true;
     }
+
+	private boolean shouldReadDataFromCallBack() {
+		return LoaderService.UpdatePolicy.NEVER.equals(updatePolicy) || !loadRemote();
+	}
 
     /**
      * Get the resourceId.
@@ -290,7 +292,7 @@ public class LoadableResource {
      * default writes an file containing the data into the user's local home directory, so subsequent or later calls,
      * even after a VM restart, should be able to recover this information.
      */
-    protected void writeCache() {
+    protected void writeCache() throws IOException {
         if (this.cache != null) {
             byte[] data = this.data == null ? null : this.data.get();
             if (data == null) {
@@ -310,21 +312,19 @@ public class LoadableResource {
      */
     protected boolean load(URI itemToLoad, boolean fallbackLoad) {
         InputStream is = null;
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
         try {
             URLConnection conn = itemToLoad.toURL().openConnection();
             byte[] data = new byte[4096];
             is = conn.getInputStream();
             int read = is.read(data);
             while (read > 0) {
-                bos.write(data, 0, read);
+                stream.write(data, 0, read);
                 read = is.read(data);
             }
-            setData(bos.toByteArray());
+            setData(stream.toByteArray());
             if (!fallbackLoad) {
                 writeCache();
-            }
-            if (!fallbackLoad) {
                 lastLoaded = System.currentTimeMillis();
                 loadCount.incrementAndGet();
             }
@@ -340,7 +340,7 @@ public class LoadableResource {
                 }
             }
             try {
-                bos.close();
+                stream.close();
             } catch (IOException e) {
                 LOG.log(Level.INFO, "Error closing resource input for " + resourceId, e);
             }
@@ -364,10 +364,10 @@ public class LoadableResource {
             accessCount.incrementAndGet();
             byte[] currentData = this.data == null ? null : this.data.get();
             if (Objects.isNull(currentData)) {
-                synchronized (LOCK) {
+                synchronized (lock) {
                     currentData = this.data == null ? null : this.data.get();
                     if (Objects.isNull(currentData)) {
-                        if (loadRemote()) {
+                        if (shouldReadDataFromCallBack()) {
                             loadFallback();
                         }
                     }
@@ -388,7 +388,7 @@ public class LoadableResource {
 
 
     public void unload() {
-        synchronized (LOCK) {
+        synchronized (lock) {
             int count = accessCount.decrementAndGet();
             if (count == 0) {
                 this.data = null;
@@ -403,7 +403,7 @@ public class LoadableResource {
      * @return true on success.
      * @throws IOException
      */
-    public boolean resetToFallback() throws IOException {
+    public boolean resetToFallback() {
         if (loadFallback()) {
             loadCount.set(0);
             return true;
@@ -425,9 +425,9 @@ public class LoadableResource {
      */
     private final class WrappedInputStream extends InputStream {
 
-        private InputStream wrapped;
+        private final InputStream wrapped;
 
-        public WrappedInputStream(InputStream wrapped) {
+        WrappedInputStream(InputStream wrapped) {
             this.wrapped = wrapped;
         }
 

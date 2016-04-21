@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2012, 2014, Credit Suisse (Anatole Tresch), Werner Keil and others by the @author tag.
+ * Copyright (c) 2012, 2015, Credit Suisse (Anatole Tresch), Werner Keil and others by the @author tag.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -15,6 +15,7 @@
  */
 package org.javamoney.moneta.function;
 
+
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.concurrent.atomic.AtomicLong;
@@ -29,7 +30,9 @@ import javax.money.MonetaryQuery;
  * this class.
  *
  * @author Anatole Tresch
+ * @deprecated use {@link ConversionOperators} or {@link MonetaryQuery} instead.
  */
+@Deprecated
 public final class MonetaryUtil {
     /**
      * defaulkt Math context used.
@@ -38,24 +41,24 @@ public final class MonetaryUtil {
     /**
      * Shared reciprocal instance.
      */
-    private static final Reciprocal RECIPROCAL = new Reciprocal();
+    private static final ReciprocalOperator RECIPROCAL = new ReciprocalOperator();
 
     /**
      * The shared instance of this class.
      */
-    private static final MinorPart MINORPART = new MinorPart();
+    private static final ExtractorMinorPartOperator MINORPART = new ExtractorMinorPartOperator();
     /**
      * SHared minor units class.
      */
-    private static final MinorUnits MINORUNITS = new MinorUnits();
+    private static final ExtractorMinorPartQuery MINORUNITS = new ExtractorMinorPartQuery();
     /**
      * Shared major part instance.
      */
-    private static final MajorPart MAJORPART = new MajorPart();
+    private static final ExtractorMajorPartOperator MAJORPART = new ExtractorMajorPartOperator();
     /**
      * Shared major units instance.
      */
-    private static final MajorUnits MAJORUNITS = new MajorUnits();
+    private static final ExtractorMajorPartQuery MAJORUNITS = new ExtractorMajorPartQuery();
 
     /**
      * Private singleton constructor.
@@ -77,7 +80,7 @@ public final class MonetaryUtil {
     }
 
     /**
-     * Return a {@link MonetaryOperator} realizing the reciprocal value of
+     * Return a {@link MonetaryOperator} realizing the recorpocal value of
      * {@code f(R) = 1/R}.
      *
      * @return the reciprocal operator, never {@code null}
@@ -93,7 +96,7 @@ public final class MonetaryUtil {
      * @return a new  {@code Permil} operator
      */
     public static MonetaryOperator permil(BigDecimal decimal) {
-        return new Permil(decimal);
+        return new PermilOperator(decimal);
     }
 
     /**
@@ -113,7 +116,7 @@ public final class MonetaryUtil {
      * @return a new  {@code Permil} operator
      */
     public static MonetaryOperator permil(Number number, MathContext mathContext) {
-        return new Permil(getBigDecimal(number, mathContext));
+        return new PermilOperator(getBigDecimal(number, mathContext));
     }
 
     /**
@@ -123,7 +126,7 @@ public final class MonetaryUtil {
      * @return a new  {@code Percent} operator
      */
     public static MonetaryOperator percent(BigDecimal decimal) {
-        return new Percent(decimal); // TODO caching, e.g. array for 1-100 might
+        return new PercentOperator(decimal); // TODO caching, e.g. array for 1-100 might
         // work.
     }
 

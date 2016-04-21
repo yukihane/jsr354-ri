@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2012, 2014, Credit Suisse (Anatole Tresch), Werner Keil and others by the @author tag.
+ * Copyright (c) 2012, 2015, Credit Suisse (Anatole Tresch), Werner Keil and others by the @author tag.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -15,28 +15,18 @@
  */
 package org.javamoney.moneta;
 
+import org.javamoney.moneta.ToStringMonetaryAmountFormat.ToStringMonetaryAmountFormatStyle;
+import org.javamoney.moneta.internal.MoneyAmountBuilder;
+import org.javamoney.moneta.spi.DefaultNumberValue;
+import org.javamoney.moneta.spi.MoneyUtils;
+
+import javax.money.*;
+import javax.money.format.MonetaryAmountFormat;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
 import java.util.Objects;
-
-import javax.money.CurrencyUnit;
-import javax.money.MonetaryAmount;
-import javax.money.MonetaryAmountFactory;
-import javax.money.MonetaryContext;
-import javax.money.MonetaryCurrencies;
-import javax.money.MonetaryException;
-import javax.money.MonetaryOperator;
-import javax.money.MonetaryQuery;
-import javax.money.NumberValue;
-import javax.money.UnknownCurrencyException;
-import javax.money.format.MonetaryAmountFormat;
-
-import org.javamoney.moneta.ToStringMonetaryAmountFormat.ToStringMonetaryAmountFormatStyle;
-import org.javamoney.moneta.internal.MoneyAmountBuilder;
-import org.javamoney.moneta.spi.DefaultNumberValue;
-import org.javamoney.moneta.spi.MoneyUtils;
 
 /**
  * Default immutable implementation of {@link MonetaryAmount} based
@@ -91,7 +81,7 @@ public final class Money implements MonetaryAmount, Comparable<MonetaryAmount>, 
     /**
      * The numeric part of this amount.
      */
-    private BigDecimal number;
+    private final BigDecimal number;
 
     /**
      * Creates a new instance os {@link Money}.
@@ -222,7 +212,7 @@ public final class Money implements MonetaryAmount, Comparable<MonetaryAmount>, 
      */
     @Override
     public Money divide(double divisor) {
-        if (isInfinityAndNotNaN(divisor)) {
+        if (NumberVerifier.isInfinityAndNotNaN(divisor)) {
             return Money.of(0, getCurrency());
         }
         if (divisor == 1.0) {
@@ -239,9 +229,6 @@ public final class Money implements MonetaryAmount, Comparable<MonetaryAmount>, 
      */
     @Override
     public Money[] divideAndRemainder(long divisor) {
-        if (divisor == 1L) {
-            return new Money[]{this, Money.of(0L, getCurrency())};
-        }
         return divideAndRemainder(BigDecimal.valueOf(divisor));
     }
 
@@ -253,7 +240,7 @@ public final class Money implements MonetaryAmount, Comparable<MonetaryAmount>, 
      */
     @Override
     public Money[] divideAndRemainder(double divisor) {
-        if (isInfinityAndNotNaN(divisor)) {
+        if (NumberVerifier.isInfinityAndNotNaN(divisor)) {
             Money zero = Money.of(0, getCurrency());
             return new Money[]{zero, zero};
         }
@@ -280,7 +267,7 @@ public final class Money implements MonetaryAmount, Comparable<MonetaryAmount>, 
      */
     @Override
     public Money multiply(double multiplicand) {
-        checkNoInfinityOrNaN(multiplicand);
+    	NumberVerifier.checkNoInfinityOrNaN(multiplicand);
         if (multiplicand == 1.0d) {
             return this;
         }
@@ -294,9 +281,6 @@ public final class Money implements MonetaryAmount, Comparable<MonetaryAmount>, 
      */
     @Override
     public Money remainder(long divisor) {
-        if (divisor == 1L) {
-            return this;
-        }
         return remainder(BigDecimal.valueOf(divisor));
     }
 
@@ -307,7 +291,7 @@ public final class Money implements MonetaryAmount, Comparable<MonetaryAmount>, 
      */
     @Override
     public Money remainder(double divisor) {
-        if (isInfinityAndNotNaN(divisor)) {
+        if (NumberVerifier.isInfinityAndNotNaN(divisor)) {
             return Money.of(0, getCurrency());
         }
         return remainder(new BigDecimal(String.valueOf(divisor)));
@@ -419,7 +403,7 @@ public final class Money implements MonetaryAmount, Comparable<MonetaryAmount>, 
      */
     @Override
     public Money divide(Number divisor) {
-        if (isInfinityAndNotNaN(divisor)) {
+        if (NumberVerifier.isInfinityAndNotNaN(divisor)) {
             return Money.of(0, getCurrency());
         }
         BigDecimal divisorBD = MoneyUtils.getBigDecimal(divisor);
@@ -433,7 +417,7 @@ public final class Money implements MonetaryAmount, Comparable<MonetaryAmount>, 
 
     @Override
     public Money[] divideAndRemainder(Number divisor) {
-        if (isInfinityAndNotNaN(divisor)) {
+        if (NumberVerifier.isInfinityAndNotNaN(divisor)) {
             Money zero = Money.of(0, getCurrency());
             return new Money[]{zero, zero};
         }
@@ -459,7 +443,7 @@ public final class Money implements MonetaryAmount, Comparable<MonetaryAmount>, 
 
     @Override
     public Money divideToIntegralValue(double divisor) {
-        if (isInfinityAndNotNaN(divisor)) {
+        if (NumberVerifier.isInfinityAndNotNaN(divisor)) {
             return Money.of(0, getCurrency());
         }
         return divideToIntegralValue(MoneyUtils.getBigDecimal(divisor));
@@ -467,7 +451,7 @@ public final class Money implements MonetaryAmount, Comparable<MonetaryAmount>, 
 
     @Override
     public Money divideToIntegralValue(Number divisor) {
-        if (isInfinityAndNotNaN(divisor)) {
+        if (NumberVerifier.isInfinityAndNotNaN(divisor)) {
             return Money.of(0, getCurrency());
         }
         BigDecimal divisorBD = MoneyUtils.getBigDecimal(divisor);
@@ -482,7 +466,7 @@ public final class Money implements MonetaryAmount, Comparable<MonetaryAmount>, 
      */
     @Override
     public Money multiply(Number multiplicand) {
-        checkNoInfinityOrNaN(multiplicand);
+    	NumberVerifier.checkNoInfinityOrNaN(multiplicand);
         BigDecimal multiplicandBD = MoneyUtils.getBigDecimal(multiplicand);
         if (multiplicandBD.equals(BigDecimal.ONE)) {
             return this;
@@ -508,7 +492,7 @@ public final class Money implements MonetaryAmount, Comparable<MonetaryAmount>, 
      */
     @Override
     public Money plus() {
-        return new Money(this.number.plus(), getCurrency());
+        return this;
     }
 
     /*
@@ -517,12 +501,12 @@ public final class Money implements MonetaryAmount, Comparable<MonetaryAmount>, 
      * @see javax.money.MonetaryAmount#subtract(javax.money.MonetaryAmount)
      */
     @Override
-    public Money subtract(MonetaryAmount subtrahend) {
-        MoneyUtils.checkAmountParameter(subtrahend, this.currency);
-        if (subtrahend.isZero()) {
+    public Money subtract(MonetaryAmount amount) {
+        MoneyUtils.checkAmountParameter(amount, this.currency);
+        if (amount.isZero()) {
             return this;
         }
-        return new Money(this.number.subtract(subtrahend.getNumber().numberValue(BigDecimal.class)), getCurrency());
+        return new Money(this.number.subtract(amount.getNumber().numberValue(BigDecimal.class)), getCurrency());
     }
 
     /*
@@ -545,7 +529,7 @@ public final class Money implements MonetaryAmount, Comparable<MonetaryAmount>, 
      */
     @Override
     public Money remainder(Number divisor) {
-        if (isInfinityAndNotNaN(divisor)) {
+        if (NumberVerifier.isInfinityAndNotNaN(divisor)) {
             return new Money(BigDecimal.ZERO, getCurrency());
         }
         BigDecimal bd = MoneyUtils.getBigDecimal(divisor);
@@ -558,8 +542,8 @@ public final class Money implements MonetaryAmount, Comparable<MonetaryAmount>, 
      * @see javax.money.MonetaryAmount#scaleByPowerOfTen(int)
      */
     @Override
-    public Money scaleByPowerOfTen(int n) {
-        return new Money(this.number.scaleByPowerOfTen(n), getCurrency());
+    public Money scaleByPowerOfTen(int power) {
+        return new Money(this.number.scaleByPowerOfTen(power), getCurrency());
     }
 
     /*
@@ -753,7 +737,7 @@ public final class Money implements MonetaryAmount, Comparable<MonetaryAmount>, 
      * @return A new instance of {@link Money}.
      */
     public static Money of(Number number, String currencyCode) {
-        return new Money(MoneyUtils.getBigDecimal(number), MonetaryCurrencies.getCurrency(currencyCode));
+        return new Money(MoneyUtils.getBigDecimal(number), Monetary.getCurrency(currencyCode));
     }
 
     /**
@@ -764,7 +748,7 @@ public final class Money implements MonetaryAmount, Comparable<MonetaryAmount>, 
      * @return A new instance of {@link Money}.
      */
     public static Money of(BigDecimal number, String currencyCode) {
-        return new Money(number, MonetaryCurrencies.getCurrency(currencyCode));
+        return new Money(number, Monetary.getCurrency(currencyCode));
     }
 
     /**
@@ -777,7 +761,7 @@ public final class Money implements MonetaryAmount, Comparable<MonetaryAmount>, 
      * @return A new instance of {@link Money}.
      */
     public static Money of(Number number, String currencyCode, MonetaryContext monetaryContext) {
-        return new Money(MoneyUtils.getBigDecimal(number), MonetaryCurrencies.getCurrency(currencyCode),
+        return new Money(MoneyUtils.getBigDecimal(number), Monetary.getCurrency(currencyCode),
                 monetaryContext);
     }
 
@@ -791,8 +775,53 @@ public final class Money implements MonetaryAmount, Comparable<MonetaryAmount>, 
      * @return A new instance of {@link Money}.
      */
     public static Money of(BigDecimal number, String currencyCode, MonetaryContext monetaryContext) {
-        return new Money(number, MonetaryCurrencies.getCurrency(currencyCode), monetaryContext);
+        return new Money(number, Monetary.getCurrency(currencyCode), monetaryContext);
     }
+
+    /**
+     * Obtains an instance of {@link Money} representing zero.
+     * @param currency
+     * @return an instance of {@link Money} representing zero.
+     * @since 1.0.1
+     */
+    public static Money zero(CurrencyUnit currency) {
+        return new Money(BigDecimal.ZERO, currency);
+    }
+
+   	 /**
+      * Obtains an instance of {@code Money} from an amount in minor units.
+      * For example, {@code ofMinor(USD, 1234)} creates the instance {@code USD 12.34}.
+      * @param currency  the currency
+      * @param amountMinor  the amount of money in the minor division of the currency
+      * @return the Money from minor units
+      * @throws NullPointerException when the currency is null
+      * @throws IllegalArgumentException when {@link CurrencyUnit#getDefaultFractionDigits()} is lesser than zero.
+      * @see {@link CurrencyUnit#getDefaultFractionDigits()}
+      * @since 1.0.1
+      */
+     public static Money ofMinor(CurrencyUnit currency, long amountMinor) {
+    	 return ofMinor(currency, amountMinor, currency.getDefaultFractionDigits());
+     }
+
+     /**
+      * Obtains an instance of {@code Money} from an amount in minor units.
+      * For example, {@code ofMinor(USD, 1234, 2)} creates the instance {@code USD 12.34}.
+      * @param currency  the currency, not null
+      * @param amountMinor  the amount of money in the minor division of the currency
+      * @param fractionDigits number of digits
+      * @return the monetary amount from minor units
+      * @see {@link CurrencyUnit#getDefaultFractionDigits()}
+      * @see {@link Money#ofMinor(CurrencyUnit, long, int)}
+      * @throws NullPointerException when the currency is null
+      * @throws IllegalArgumentException when the fractionDigits is negative
+      * @since 1.0.1
+      */
+     public static Money ofMinor(CurrencyUnit currency, long amountMinor, int fractionDigits) {
+     	if(fractionDigits < 0) {
+     		throw new IllegalArgumentException("The fractionDigits cannot be negative");
+     	}
+     	return of(BigDecimal.valueOf(amountMinor, fractionDigits), currency);
+     }
 
     /**
      * Converts (if necessary) the given {@link MonetaryAmount} to a
@@ -834,20 +863,15 @@ public final class Money implements MonetaryAmount, Comparable<MonetaryAmount>, 
         return from(formatter.parse(text));
     }
 
-    private static ToStringMonetaryAmountFormat DEFAULT_FORMATTER = ToStringMonetaryAmountFormat
+    private static final ToStringMonetaryAmountFormat DEFAULT_FORMATTER = ToStringMonetaryAmountFormat
             .of(ToStringMonetaryAmountFormatStyle.MONEY);
 
-    public static void checkNoInfinityOrNaN(Number number) {
-        if (Double.class == number.getClass() || Float.class == number.getClass()) {
-            double dValue = number.doubleValue();
-            if (Double.isNaN(dValue)) {
-                throw new ArithmeticException("Not a valid input: NaN.");
-            } else if (Double.isInfinite(dValue)) {
-                throw new ArithmeticException("Not a valid input: INFINITY: " + dValue);
-            }
-        }
-    }
-
+    /**
+     * Just to don't break the compatibility.
+     * Don't use it
+     * @param number
+     */
+    @Deprecated
     public static boolean isInfinityAndNotNaN(Number number) {
         if (Double.class == number.getClass() || Float.class == number.getClass()) {
             double dValue = number.doubleValue();
@@ -859,5 +883,20 @@ public final class Money implements MonetaryAmount, Comparable<MonetaryAmount>, 
         }
         return false;
     }
-
+    /**
+     * Just to don't break the compatibility.
+     * Don't use it
+     * @param number
+     */
+    @Deprecated
+    public static void checkNoInfinityOrNaN(Number number) {
+        if (Double.class == number.getClass() || Float.class == number.getClass()) {
+            double dValue = number.doubleValue();
+            if (Double.isNaN(dValue)) {
+                throw new ArithmeticException("Not a valid input: NaN.");
+            } else if (Double.isInfinite(dValue)) {
+                throw new ArithmeticException("Not a valid input: INFINITY: " + dValue);
+            }
+        }
+    }
 }

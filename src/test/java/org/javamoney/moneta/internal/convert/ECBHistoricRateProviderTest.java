@@ -19,34 +19,28 @@ import static javax.money.convert.MonetaryConversions.getExchangeRateProvider;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
-
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.Month;
-import java.time.YearMonth;
 import java.util.Objects;
 
 import javax.money.CurrencyUnit;
+import javax.money.Monetary;
 import javax.money.MonetaryAmount;
-import javax.money.MonetaryCurrencies;
-import javax.money.convert.ConversionQuery;
-import javax.money.convert.ConversionQueryBuilder;
 import javax.money.convert.CurrencyConversion;
 import javax.money.convert.ExchangeRateProvider;
 
-import org.javamoney.moneta.ExchangeRateType;
+import org.javamoney.moneta.convert.ExchangeRateType;
 import org.javamoney.moneta.Money;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
 public class ECBHistoricRateProviderTest {
 
-    private static final CurrencyUnit EURO = MonetaryCurrencies
+    private static final CurrencyUnit EURO = Monetary
             .getCurrency("EUR");
-    private static final CurrencyUnit DOLLAR = MonetaryCurrencies
+    private static final CurrencyUnit DOLLAR = Monetary
             .getCurrency("USD");
 
-    private static final CurrencyUnit BRAZILIAN_REAL = MonetaryCurrencies
+    private static final CurrencyUnit BRAZILIAN_REAL = Monetary
             .getCurrency("BRL");
 
     private ExchangeRateProvider provider;
@@ -152,23 +146,6 @@ public class ECBHistoricRateProviderTest {
         MonetaryAmount result = currencyConversion.apply(money);
 
         assertEquals(result.getCurrency(), BRAZILIAN_REAL);
-        assertTrue(result.getNumber().doubleValue() > 0);
-
-    }
-
-    @Test
-    public void shouldSetTimeInLocalDateTime() {
-
-        LocalDate localDate = YearMonth.of(2014, Month.JANUARY).atDay(9);
-        ConversionQuery conversionQuery = ConversionQueryBuilder.of()
-                .setTermCurrency(EURO).set(localDate).build();
-        CurrencyConversion currencyConversion = provider
-                .getCurrencyConversion(conversionQuery);
-        assertNotNull(currencyConversion);
-        MonetaryAmount money = Money.of(BigDecimal.TEN, DOLLAR);
-        MonetaryAmount result = currencyConversion.apply(money);
-
-        assertEquals(result.getCurrency(), EURO);
         assertTrue(result.getNumber().doubleValue() > 0);
 
     }

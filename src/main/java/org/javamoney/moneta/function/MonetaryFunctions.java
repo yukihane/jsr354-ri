@@ -1,3 +1,18 @@
+/**
+ * Copyright (c) 2012, 2015, Anatole Tresch, Werner Keil and others by the @author tag.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
 package org.javamoney.moneta.function;
 
 import java.util.Comparator;
@@ -24,10 +39,14 @@ import org.javamoney.moneta.spi.MoneyUtils;
  *
  * @author otaviojava
  * @author anatole
+ * @author keilw
  */
 public final class MonetaryFunctions {
 
-
+    /**
+     * Private constructor for static accessor class.
+     */
+    private MonetaryFunctions(){}
     /**
      * Collector to group by CurrencyUnit
      * @return the Collector to of Map<CurrencyUnit, List<MonetaryAmount>>
@@ -37,7 +56,7 @@ public final class MonetaryFunctions {
     }
 
     /**
-     * of the summary of the MonetaryAmount
+     * Creates a the summary of MonetaryAmounts.
      * @param currencyUnit the target {@link javax.money.CurrencyUnit}
      * @return the MonetarySummaryStatistics
      */
@@ -48,18 +67,17 @@ public final class MonetaryFunctions {
     }
 
 	/**
-	 * of the summary of the MonetaryAmount
-	 * @param currencyUnit
-	 *            the target {@link javax.money.CurrencyUnit}
-	 * @return the MonetarySummaryStatistics
-	 */
+	 * reates a the summary of MonetaryAmounts.
+	 * @param currencyUnit the target {@link javax.money.CurrencyUnit}
+	 * @param provider the rate provider
+     * @return the MonetarySummaryStatistics
+	 * @deprecated Use #summarizingMonetary(CurrencyUnit) instead of.
+     */
+	@Deprecated
 	public static Collector<MonetaryAmount, MonetarySummaryStatistics, MonetarySummaryStatistics> summarizingMonetary(
-			CurrencyUnit currencyUnit, ExchangeRateProvider provider) {
-
-		Supplier<MonetarySummaryStatistics> supplier = () -> new ExchangeRateMonetarySummaryStatistics(
-				currencyUnit, provider);
-		return Collector.of(supplier, MonetarySummaryStatistics::accept,
-				MonetarySummaryStatistics::combine);
+			CurrencyUnit currencyUnit,javax.money.convert.ExchangeRateProvider provider){
+		// TODO implement method here
+		return summarizingMonetary(currencyUnit);
 	}
 
     /**
@@ -87,7 +105,7 @@ public final class MonetaryFunctions {
 	 * @param provider the rate provider to be used, not null.
 	 * @return the sort of {@link MonetaryAmount} using {@link ExchangeRate}
 	 */
-	public static Comparator<? super MonetaryAmount> sortValiable(
+	public static Comparator<? super MonetaryAmount> sortValuable(
 			ExchangeRateProvider provider) {
 
 		return (m1, m2) -> {
@@ -98,15 +116,41 @@ public final class MonetaryFunctions {
 	}
 
 	/**
+	 * comparator to sort the {@link MonetaryAmount} considering the
+	 * {@link ExchangeRate}
+	 * @param provider the rate provider to be used.
+	 * @return the sort of {@link MonetaryAmount} using {@link ExchangeRate}
+	 * @deprecated call #sortValuable instead of.
+	 */
+	@Deprecated
+	public static Comparator<? super MonetaryAmount> sortValiable(final ExchangeRateProvider provider) {
+		return sortValuable(provider);
+	}
+
+	/**
 	 * Descending order of
-	 * {@link MonetaryFunctions#sortValiable(ExchangeRateProvider)}
+	 * {@link MonetaryFunctions#sortValuable(ExchangeRateProvider)}
+	 * @param provider the rate provider to be used.
+	 * @return the Descending order of
+	 *         {@link MonetaryFunctions#sortValuable(ExchangeRateProvider)}
+	 * @deprecated Use #sortValiableDesc instead of.
+	 */
+	@Deprecated
+	public static Comparator<? super MonetaryAmount> sortValiableDesc(
+			final ExchangeRateProvider provider) {
+		return sortValuableDesc(provider);
+	}
+
+	/**
+	 * Descending order of
+	 * {@link MonetaryFunctions#sortValuable(ExchangeRateProvider)}
 	 * @param provider the rate provider to be used, not null.
 	 * @return the Descending order of
-	 *         {@link MonetaryFunctions#sortValiable(ExchangeRateProvider)}
+	 *         {@link MonetaryFunctions#sortValuable(ExchangeRateProvider)}
 	 */
-	public static Comparator<? super MonetaryAmount> sortValiableDesc(
+	public static Comparator<? super MonetaryAmount> sortValuableDesc(
 			ExchangeRateProvider provider) {
-		return sortValiable(provider).reversed();
+		return sortValuable(provider).reversed();
 	}
 
     /**

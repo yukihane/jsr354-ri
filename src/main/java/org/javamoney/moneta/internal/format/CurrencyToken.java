@@ -19,7 +19,7 @@ import org.javamoney.moneta.format.CurrencyStyle;
 
 import javax.money.CurrencyUnit;
 import javax.money.MonetaryAmount;
-import javax.money.MonetaryCurrencies;
+import javax.money.Monetary;
 import javax.money.MonetaryException;
 import javax.money.format.MonetaryParseException;
 import java.io.IOException;
@@ -42,7 +42,7 @@ final class CurrencyToken implements FormatToken {
     /**
      * The target locale.
      */
-    private Locale locale;
+    private final Locale locale;
 
     /**
      * Creates a new {@link CurrencyToken}.
@@ -51,7 +51,7 @@ final class CurrencyToken implements FormatToken {
      *               {@code null}.
      * @param locale The target locale, not {@code null}.
      */
-    public CurrencyToken(CurrencyStyle style, Locale locale) {
+    CurrencyToken(CurrencyStyle style, Locale locale) {
         Objects.requireNonNull(locale, "Locale null");
         this.locale = locale;
         if (Objects.nonNull(style)) {
@@ -87,7 +87,7 @@ final class CurrencyToken implements FormatToken {
      *               to be formatted.
      * @return the formatted currency.
      */
-    protected String getToken(MonetaryAmount amount) {
+    private String getToken(MonetaryAmount amount) {
         switch (style) {
             case NUMERIC_CODE:
                 return String.valueOf(amount.getCurrency()
@@ -182,28 +182,28 @@ final class CurrencyToken implements FormatToken {
             CurrencyUnit cur;
             switch (style) {
                 case CODE:
-                    if (!MonetaryCurrencies.isCurrencyAvailable(token)) {
+                    if (!Monetary.isCurrencyAvailable(token)) {
                         // Perhaps blank is missing between currency code and number...
                         String subCurrency = parseCurrencyCode(token);
-                        cur = MonetaryCurrencies.getCurrency(subCurrency);
+                        cur = Monetary.getCurrency(subCurrency);
                         context.consume(subCurrency);
                     } else {
-                        cur = MonetaryCurrencies.getCurrency(token);
+                        cur = Monetary.getCurrency(token);
                         context.consume(token);
                     }
                     break;
                 case SYMBOL:
                     if (token.startsWith("$")) {
-                        cur = MonetaryCurrencies.getCurrency("USD");
+                        cur = Monetary.getCurrency("USD");
                         context.consume("$");
                     } else if (token.startsWith("€")) {
-                        cur = MonetaryCurrencies.getCurrency("EUR");
+                        cur = Monetary.getCurrency("EUR");
                         context.consume("€");
                     } else if (token.startsWith("£")) {
-                        cur = MonetaryCurrencies.getCurrency("GBP");
+                        cur = Monetary.getCurrency("GBP");
                         context.consume("£");
                     } else {
-                        cur = MonetaryCurrencies.getCurrency(token);
+                        cur = Monetary.getCurrency(token);
                         context.consume(token);
                     }
                     context.setParsedCurrency(cur);
@@ -228,7 +228,6 @@ final class CurrencyToken implements FormatToken {
      * @return the first letter based part, or the full token.
      */
     private String parseCurrencyCode(String token) {
-        StringBuilder b = new StringBuilder();
         int letterIndex = 0;
         for (char ch : token.toCharArray()) {
             if (Character.isLetter(ch)) {

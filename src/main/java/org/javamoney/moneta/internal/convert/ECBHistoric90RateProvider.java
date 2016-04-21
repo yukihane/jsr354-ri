@@ -15,8 +15,6 @@
  */
 package org.javamoney.moneta.internal.convert;
 
-import java.net.MalformedURLException;
-
 import javax.money.convert.ProviderContext;
 import javax.money.convert.ProviderContextBuilder;
 import javax.money.convert.RateType;
@@ -40,7 +38,7 @@ import javax.money.convert.RateType;
  * @author Werner Keil
  * @author otaviojava
  */
-public class ECBHistoric90RateProvider extends AbstractECBRateProvider {
+public class ECBHistoric90RateProvider extends ECBAbstractRateProvider {
 
 
     private static final String DATA_ID = ECBHistoric90RateProvider.class.getSimpleName();
@@ -49,7 +47,7 @@ public class ECBHistoric90RateProvider extends AbstractECBRateProvider {
             ProviderContextBuilder.of("ECB-HIST90", RateType.HISTORIC, RateType.DEFERRED)
                     .set("providerDescription", "European Central Bank (last 90 days)").set("days", 90).build();
 
-    public ECBHistoric90RateProvider() throws MalformedURLException {
+    public ECBHistoric90RateProvider() {
         super(CONTEXT);
     }
 

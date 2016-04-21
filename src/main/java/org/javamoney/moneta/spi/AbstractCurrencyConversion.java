@@ -23,6 +23,9 @@ import javax.money.convert.ConversionContext;
 import javax.money.convert.CurrencyConversion;
 import javax.money.convert.CurrencyConversionException;
 import javax.money.convert.ExchangeRate;
+
+import org.javamoney.moneta.function.MonetaryOperators;
+
 import java.math.MathContext;
 import java.math.RoundingMode;
 import java.util.Objects;
@@ -35,8 +38,10 @@ import java.util.Objects;
  */
 public abstract class AbstractCurrencyConversion implements CurrencyConversion {
 
-    private CurrencyUnit termCurrency;
-    private ConversionContext conversionContext;
+    private final CurrencyUnit termCurrency;
+    private final ConversionContext conversionContext;
+
+    public static final String KEY_SCALE = "exchangeRateScale";
 
     public AbstractCurrencyConversion(CurrencyUnit termCurrency, ConversionContext conversionContext) {
         Objects.requireNonNull(termCurrency);
@@ -75,7 +80,7 @@ public abstract class AbstractCurrencyConversion implements CurrencyConversion {
      * @see #apply(MonetaryAmount)
      */
     @Override
-    public abstract ExchangeRate getExchangeRate(MonetaryAmount amount);
+    public abstract ExchangeRate getExchangeRate(MonetaryAmount sourceAmount);
 
     /*
      * (non-Javadoc)
@@ -103,9 +108,16 @@ public abstract class AbstractCurrencyConversion implements CurrencyConversion {
             throw new CurrencyConversionException(amount.getCurrency(),
                     Objects.isNull(rate) ? null : rate.getCurrency(), null);
         }
+
         NumberValue factor = rate.getFactor();
         factor = roundFactor(amount, factor);
-        return amount.multiply(factor).getFactory().setCurrency(rate.getCurrency()).create();
+
+        Integer scale = rate.getContext().get(KEY_SCALE, Integer.class);
+        if(Objects.isNull(scale) || scale < 0) {
+        	return amount.multiply(factor).getFactory().setCurrency(rate.getCurrency()).create();
+        } else {
+        	return amount.multiply(factor).getFactory().setCurrency(rate.getCurrency()).create().with(MonetaryOperators.rounding(scale));
+        }
     }
 
     /**
