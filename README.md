@@ -1,3 +1,5 @@
+[本家](src/main/asciidoc/userguide.adoc)に[日本語訳](src/main/asciidoc/userguide-ja.adoc)をcatch up
+
 JSR 354: Money and Currency Moneta Reference Implementation
 ===========================================================
 JSR 354 provides an API for representing, transporting, and performing comprehensive calculations with Money and Currency. 
